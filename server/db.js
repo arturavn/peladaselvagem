@@ -2,10 +2,14 @@
 // PostgreSQL connection and state persistence
 
 import pg from 'pg'
+import dns from 'dns'
 import dotenv from 'dotenv'
 import { DEFAULT_STATE } from './gameLogic.js'
 
 dotenv.config()
+
+// Force Node.js DNS to prefer IPv4 — fixes ENETUNREACH on IPv6-only hosts
+dns.setDefaultResultOrder('ipv4first')
 
 const { Pool } = pg
 
@@ -14,7 +18,6 @@ const isRemote = process.env.DATABASE_URL && !process.env.DATABASE_URL.includes(
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: isRemote ? { rejectUnauthorized: false } : false,
-  family: 4, // force IPv4
 })
 
 export async function query(text, params) {
