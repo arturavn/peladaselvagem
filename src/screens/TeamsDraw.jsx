@@ -21,6 +21,11 @@ function IconArrow() {
 /* ── Component ─────────────────────────────────────────── */
 
 export default function TeamsDraw({ teams, teamQueue, onContinue, onBack }) {
+  // Only complete teams are eligible for PRETO/AMARELO — must match MatchSelection logic
+  const completeQueueIds = teamQueue.filter(id => {
+    const t = teams.find(t => t.id === id)
+    return t && t.complete
+  })
 
   return (
     <div className="screen-content" style={{ paddingBottom: 0 }}>
@@ -60,9 +65,9 @@ export default function TeamsDraw({ teams, teamQueue, onContinue, onBack }) {
       {/* ── Teams list ── */}
       <div style={{ padding: '20px 20px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {teams.map((team) => {
-          const queuePosition = teamQueue.indexOf(team.id)
+          const playingPosition = completeQueueIds.indexOf(team.id)
           return (
-            <TeamCard key={team.id} team={team} queuePosition={queuePosition >= 0 ? queuePosition : undefined} />
+            <TeamCard key={team.id} team={team} queuePosition={playingPosition >= 0 && playingPosition < 2 ? playingPosition : undefined} />
           )
         })}
       </div>
