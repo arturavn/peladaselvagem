@@ -247,6 +247,7 @@ export default function App() {
         {state.screen === 'teams' && (
           <TeamsDraw
             teams={state.teams}
+            teamQueue={state.teamQueue}
             onContinue={() => go('selection')}
             onBack={() => go('registration', 'back')}
           />

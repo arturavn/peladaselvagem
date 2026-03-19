@@ -20,7 +20,12 @@ function IconArrow() {
 
 /* ── Component ─────────────────────────────────────────── */
 
-export default function TeamsDraw({ teams, onContinue, onBack }) {
+export default function TeamsDraw({ teams, teamQueue, onContinue, onBack }) {
+  // Order teams by their queue position so PRETO/AMARELO labels are correct
+  const orderedTeams = teamQueue
+    .map(id => teams.find(t => t.id === id))
+    .filter(Boolean)
+
   return (
     <div className="screen-content" style={{ paddingBottom: 0 }}>
       {/* ── Header ── */}
@@ -49,16 +54,16 @@ export default function TeamsDraw({ teams, onContinue, onBack }) {
             fontWeight: 500,
             marginTop: 4,
           }}>
-            {teams.length} {teams.length === 1 ? 'time sorteado' : 'times sorteados'}
+            {orderedTeams.length} {orderedTeams.length === 1 ? 'time sorteado' : 'times sorteados'}
             {' · '}
-            {teams.reduce((acc, t) => acc + t.players.length, 0)} jogadores
+            {orderedTeams.reduce((acc, t) => acc + t.players.length, 0)} jogadores
           </div>
         </div>
       </div>
 
       {/* ── Teams list ── */}
       <div style={{ padding: '20px 20px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {teams.map((team, idx) => (
+        {orderedTeams.map((team, idx) => (
           <TeamCard key={team.id} team={team} index={idx} />
         ))}
       </div>
