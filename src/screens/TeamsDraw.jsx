@@ -86,7 +86,14 @@ export default function TeamsDraw({ teams, onContinue, onBack }) {
 
 /* ── TeamCard ─────────────────────────────────────────────── */
 
+const SLOT_LABELS = ['PRETO', 'AMARELO']
+const SLOT_EMOJIS = ['⚫', '🟡']
+
 function TeamCard({ team, index }) {
+  const hasSlot = index < 2
+  const slotLabel = hasSlot ? SLOT_LABELS[index] : null
+  const slotEmoji = hasSlot ? SLOT_EMOJIS[index] : null
+
   return (
     <div
       className="card"
@@ -98,15 +105,29 @@ function TeamCard({ team, index }) {
       {/* Card header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>{team.emoji}</span>
-          <span style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 22,
-            letterSpacing: '0.06em',
-            color: 'var(--text)',
-          }}>
-            {team.captain.toUpperCase()}
-          </span>
+          {slotEmoji && <span style={{ fontSize: 18 }}>{slotEmoji}</span>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {slotLabel && (
+              <span style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: index === 1 ? '#F5C400' : '#AAAAAA',
+              }}>
+                {slotLabel}
+              </span>
+            )}
+            <span style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 22,
+              letterSpacing: '0.06em',
+              color: 'var(--text)',
+            }}>
+              {team.captain.toUpperCase()}
+            </span>
+          </div>
         </div>
 
         <div className={`team-badge ${team.complete ? 'complete' : 'incomplete'}`}>

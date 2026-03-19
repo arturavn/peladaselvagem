@@ -341,10 +341,16 @@ router.post('/actions/add-late-player', async (req, res) => {
 router.post('/actions/next-match', async (req, res) => {
   try {
     const state = await getState()
-    const [teamAId, teamBId] = state.teamQueue
+
+    // Only select complete teams for the next match
+    const completeIds = state.teamQueue.filter(id => {
+      const t = state.teams.find(t => t.id === id)
+      return t && t.complete
+    })
+    const [teamAId, teamBId] = completeIds
 
     if (!teamAId || !teamBId) {
-      return res.status(400).json({ error: 'Not enough teams in queue' })
+      return res.status(400).json({ error: 'Not enough complete teams in queue' })
     }
 
     state.activeMatch = {

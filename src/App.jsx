@@ -169,8 +169,13 @@ export default function App() {
     .map(getTeam)
     .filter(Boolean)
 
-  const defaultTeamAId = state.teamQueue[0] ?? null
-  const defaultTeamBId = state.teamQueue[1] ?? null
+  // Only complete teams are eligible to play
+  const completeQueueIds = state.teamQueue.filter(id => {
+    const t = state.teams.find(t => t.id === id)
+    return t && t.complete
+  })
+  const defaultTeamAId = completeQueueIds[0] ?? null
+  const defaultTeamBId = completeQueueIds[1] ?? null
 
   /* Active match teams for passing to screens */
   const matchTeamA = state.activeMatch ? getTeam(state.activeMatch.teamAId) : null
