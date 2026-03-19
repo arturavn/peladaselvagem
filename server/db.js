@@ -14,6 +14,7 @@ const isRemote = process.env.DATABASE_URL && !process.env.DATABASE_URL.includes(
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: isRemote ? { rejectUnauthorized: false } : false,
+  family: 4, // force IPv4
 })
 
 export async function query(text, params) {
