@@ -110,7 +110,7 @@ export default function PlayerRegistration({ players, onAdd, onRemove, onSort, o
             width: '100%', maxWidth: 390,
             background: 'var(--surface)',
             borderRadius: '20px 20px 0 0',
-            padding: '28px 24px calc(28px + var(--safe-bottom, 0px))',
+            padding: '28px 24px calc(76px + var(--safe-bottom, 0px))',
             display: 'flex', flexDirection: 'column', gap: 20,
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
