@@ -172,6 +172,7 @@ router.post('/actions/select-winner', async (req, res) => {
     // 7. Update state
     state.teams = teams
     state.teamQueue = newQueue
+    state.activeMatch = null
     state.showEndModal = false
     state.lastWinnerId = winnerTeamId
     state.screen = 'queue'
@@ -223,6 +224,7 @@ router.post('/actions/resolve-empate', async (req, res) => {
 
     state.teams = teams
     state.teamQueue = newQueue
+    state.activeMatch = null
     state.showEndModal = false
     state.lastWinnerId = null
     state.screen = 'queue'

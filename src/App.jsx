@@ -256,12 +256,8 @@ export default function App() {
         {state.screen === 'selection' && (
           <MatchSelection
             teams={state.teams}
-            defaultTeamAId={
-              state.activeMatch?.teamAId ?? defaultTeamAId
-            }
-            defaultTeamBId={
-              state.activeMatch?.teamBId ?? defaultTeamBId
-            }
+            defaultTeamAId={defaultTeamAId}
+            defaultTeamBId={defaultTeamBId}
             defaultDuration={state.activeMatch?.duration ?? 7}
             onStart={startMatch}
           />
