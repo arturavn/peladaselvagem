@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(node:*)",
+      "Bash(cmd.exe /c \"where npm\")",
+      "Bash(cmd.exe /c \"where node\")",
+      "Bash(ls:*)",
+      "Bash(\"C:\\\\Users\\\\4rfly\\\\AppData\\\\Local\\\\nvm\\\\v22.22.0\\\\node.exe\" \"C:\\\\Users\\\\4rfly\\\\Downloads\\\\gestaopelada\\\\node_modules\\\\.bin\\\\concurrently.cmd\" \"node --watch server/index.js\" \"node node_modules/vite/bin/vite.js --host\")",
+      "Bash(\"C:\\\\Users\\\\4rfly\\\\AppData\\\\Local\\\\nvm\\\\v22.22.0\\\\node.exe\" server/index.js)",
+      "Bash(curl -s http://localhost:3001/api/state)"
+    ]
+  }
+}
