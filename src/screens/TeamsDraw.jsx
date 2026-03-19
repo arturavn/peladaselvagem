@@ -21,10 +21,6 @@ function IconArrow() {
 /* ── Component ─────────────────────────────────────────── */
 
 export default function TeamsDraw({ teams, teamQueue, onContinue, onBack }) {
-  // Order teams by their queue position so PRETO/AMARELO labels are correct
-  const orderedTeams = teamQueue
-    .map(id => teams.find(t => t.id === id))
-    .filter(Boolean)
 
   return (
     <div className="screen-content" style={{ paddingBottom: 0 }}>
@@ -54,18 +50,21 @@ export default function TeamsDraw({ teams, teamQueue, onContinue, onBack }) {
             fontWeight: 500,
             marginTop: 4,
           }}>
-            {orderedTeams.length} {orderedTeams.length === 1 ? 'time sorteado' : 'times sorteados'}
+            {teams.length} {teams.length === 1 ? 'time sorteado' : 'times sorteados'}
             {' · '}
-            {orderedTeams.reduce((acc, t) => acc + t.players.length, 0)} jogadores
+            {teams.reduce((acc, t) => acc + t.players.length, 0)} jogadores
           </div>
         </div>
       </div>
 
       {/* ── Teams list ── */}
       <div style={{ padding: '20px 20px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {orderedTeams.map((team, idx) => (
-          <TeamCard key={team.id} team={team} index={idx} />
-        ))}
+        {teams.map((team) => {
+          const queuePosition = teamQueue.indexOf(team.id)
+          return (
+            <TeamCard key={team.id} team={team} queuePosition={queuePosition >= 0 ? queuePosition : undefined} />
+          )
+        })}
       </div>
 
       {/* Spacer — empurra o botão para baixo da lista */}
@@ -91,20 +90,16 @@ export default function TeamsDraw({ teams, teamQueue, onContinue, onBack }) {
 
 /* ── TeamCard ─────────────────────────────────────────────── */
 
-const SLOT_LABELS = ['PRETO', 'AMARELO']
-const SLOT_EMOJIS = ['⚫', '🟡']
-
-function TeamCard({ team, index }) {
-  const hasSlot = index < 2
-  const slotLabel = hasSlot ? SLOT_LABELS[index] : null
-  const slotEmoji = hasSlot ? SLOT_EMOJIS[index] : null
+function TeamCard({ team, queuePosition }) {
+  const slotLabel = queuePosition === 0 ? 'PRETO' : queuePosition === 1 ? 'AMARELO' : null
+  const slotEmoji = queuePosition === 0 ? '⚫' : queuePosition === 1 ? '🟡' : null
 
   return (
     <div
       className="card"
       style={{
         animation: 'fadeIn 0.35s ease both',
-        animationDelay: `${index * 50}ms`,
+        animationDelay: `${(queuePosition ?? 3) * 50}ms`,
       }}
     >
       {/* Card header */}
@@ -119,7 +114,7 @@ function TeamCard({ team, index }) {
                 fontWeight: 700,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: index === 1 ? '#F5C400' : '#AAAAAA',
+                color: queuePosition === 1 ? '#F5C400' : '#AAAAAA',
               }}>
                 {slotLabel}
               </span>
