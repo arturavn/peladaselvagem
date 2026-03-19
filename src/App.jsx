@@ -141,6 +141,14 @@ export default function App() {
     } catch (e) { console.error('startNextMatch error:', e) }
   }, [])
 
+  /* Reset everything */
+  const handleReset = useCallback(async () => {
+    try {
+      const data = await api.reset()
+      setState(data.state)
+    } catch (e) { console.error('reset error:', e) }
+  }, [])
+
   /* Export */
   const handleExport = useCallback(async () => {
     try {
@@ -226,6 +234,7 @@ export default function App() {
             onRemove={removePlayer}
             onSort={sortTeams}
             onExport={handleExport}
+            onReset={handleReset}
             hasTeams={hasTeams}
           />
         )}

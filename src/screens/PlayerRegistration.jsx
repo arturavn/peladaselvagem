@@ -40,11 +40,20 @@ function IconExport() {
   )
 }
 
+function IconTrash() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M3 5h12M7 5V3.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V5M14 5l-.8 9.2a1 1 0 0 1-1 .8H5.8a1 1 0 0 1-1-.8L4 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
 /* ── Component ───────────────────────────────────────────── */
 
-export default function PlayerRegistration({ players, onAdd, onRemove, onSort, onExport, hasTeams }) {
+export default function PlayerRegistration({ players, onAdd, onRemove, onSort, onExport, onReset, hasTeams }) {
   const [input, setInput] = useState('')
   const [exportToast, setExportToast] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
   const inputRef = useRef(null)
   const canSort = players.length >= MIN_PLAYERS_TO_SORT
 
@@ -82,11 +91,95 @@ export default function PlayerRegistration({ players, onAdd, onRemove, onSort, o
   const teamsCount = Math.floor(players.length / 5)
   const waitingCount = players.length % 5
 
+  const handleReset = async () => {
+    if (onReset) await onReset()
+    setShowResetConfirm(false)
+  }
+
   return (
     <div className="screen-content">
+      {/* ── Reset Confirmation Modal ── */}
+      {showResetConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          background: 'rgba(0,0,0,0.75)',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          backdropFilter: 'blur(4px)',
+        }}>
+          <div style={{
+            width: '100%', maxWidth: 390,
+            background: 'var(--surface)',
+            borderRadius: '20px 20px 0 0',
+            padding: '28px 24px calc(28px + var(--safe-bottom, 0px))',
+            display: 'flex', flexDirection: 'column', gap: 20,
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 22,
+                letterSpacing: '0.08em',
+                color: '#FF3B3B',
+              }}>RESETAR TUDO?</span>
+              <span style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                color: 'var(--text-2)',
+                lineHeight: 1.6,
+              }}>
+                Isso vai apagar todos os jogadores, times e partidas. Não tem como desfazer.
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                className="btn"
+                onClick={handleReset}
+                style={{
+                  height: 52, fontSize: 16, letterSpacing: '0.08em',
+                  background: '#FF3B3B', color: '#fff', border: 'none',
+                }}
+              >
+                SIM, RESETAR TUDO
+              </button>
+              <button
+                className="btn"
+                onClick={() => setShowResetConfirm(false)}
+                style={{
+                  height: 48, fontSize: 14, letterSpacing: '0.08em',
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: 'var(--text-2)',
+                }}
+              >
+                CANCELAR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Header ── */}
-      <div className="screen-header">
+      <div className="screen-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Logo />
+        {players.length > 0 && (
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 8,
+              color: 'rgba(255,59,59,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = '#FF3B3B'}
+            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,59,59,0.5)'}
+            aria-label="Resetar tudo"
+          >
+            <IconTrash />
+          </button>
+        )}
       </div>
 
       {/* ── Body ── */}
