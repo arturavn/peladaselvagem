@@ -280,8 +280,7 @@ router.post('/actions/remove-queue-player', async (req, res) => {
 
     const state = await getState()
 
-    // Remove from global players list
-    state.players = state.players.filter(p => p !== name)
+    // NOTE: keep in state.players (used for export/payment control)
 
     // Find team containing this player
     const team = state.teams.find(t => t.players.includes(name))

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Logo from '../components/Logo'
 import { TEAM_ROLE, getInitials } from '../components/BottomNav'
 
@@ -214,7 +214,7 @@ function LatePlayerInput({ onAdd }) {
 
 /* ── Queue row — neutral, no team color ─────────────────── */
 
-function QueueRow({ number, name, team, isCaptain, onRemove }) {
+function QueueRow({ number, name, team, isCaptain }) {
   const cap = team?.captain ?? team?.players?.[0] ?? ''
   return (
     <div
@@ -245,23 +245,6 @@ function QueueRow({ number, name, team, isCaptain, onRemove }) {
           CAP
         </span>
       )}
-      <button
-        onClick={() => onRemove(name)}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '4px 6px',
-          color: 'var(--danger)',
-          fontSize: 16,
-          lineHeight: 1,
-          opacity: 0.7,
-          flexShrink: 0,
-        }}
-        aria-label={`Remover ${name}`}
-      >
-        ✕
-      </button>
     </div>
   )
 }
@@ -334,6 +317,165 @@ function FullQueueOrder({ teamQueue, teams }) {
   )
 }
 
+/* ── Remove player modal ────────────────────────────────── */
+
+function RemovePlayerModal({ teams, teamQueue, onRemove, onClose }) {
+  const [confirm, setConfirm] = useState(null) // { name, teamName }
+
+  // All players across all teams in queue order
+  const allPlayers = teamQueue.flatMap(id => {
+    const team = teams.find(t => t.id === id)
+    if (!team) return []
+    return team.players.map((name, i) => ({
+      name,
+      teamCap: team.captain ?? team.players[0] ?? '',
+      isCaptain: i === 0,
+    }))
+  })
+
+  const handleTap = (player) => {
+    setConfirm(player)
+  }
+
+  const handleConfirm = () => {
+    onRemove(confirm.name)
+    setConfirm(null)
+    onClose()
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 200,
+      background: 'rgba(0,0,0,0.85)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'flex-end',
+    }} onClick={onClose}>
+      <div style={{
+        width: '100%', maxWidth: 390,
+        background: 'var(--surface)',
+        borderRadius: '20px 20px 0 0',
+        maxHeight: '75dvh',
+        display: 'flex', flexDirection: 'column',
+      }} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{
+          padding: '20px 20px 12px',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0,
+        }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.06em', color: 'var(--text)' }}>
+              REMOVER JOGADOR
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+              Jogador sai da pelada mas fica na lista de pagamentos
+            </div>
+          </div>
+          <button onClick={onClose} style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: 'var(--text-3)', fontSize: 20, padding: 4,
+          }}>✕</button>
+        </div>
+
+        {/* Confirm overlay */}
+        {confirm && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 10,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: '20px 20px 0 0',
+          }}>
+            <div style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              padding: '24px 20px',
+              margin: 20,
+              display: 'flex', flexDirection: 'column', gap: 16,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--danger)', letterSpacing: '0.06em' }}>
+                REMOVER {confirm.name.toUpperCase()}?
+              </div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-3)', lineHeight: 1.5 }}>
+                Ele sai da pelada de hoje mas permanece na lista de pagamentos.
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setConfirm(null)} style={{
+                  flex: 1, padding: '12px 0',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text-3)',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 14, letterSpacing: '0.06em', cursor: 'pointer',
+                }}>
+                  CANCELAR
+                </button>
+                <button onClick={handleConfirm} style={{
+                  flex: 1, padding: '12px 0',
+                  background: 'var(--danger)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  color: '#fff',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 14, letterSpacing: '0.06em', cursor: 'pointer',
+                }}>
+                  REMOVER
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Player list */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '8px 0' }}>
+          {allPlayers.map(({ name, teamCap, isCaptain }, idx) => (
+            <div key={`${name}-${idx}`} onClick={() => handleTap({ name, teamCap })} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '12px 20px',
+              borderBottom: '1px solid var(--border)',
+              cursor: 'pointer',
+              background: 'transparent',
+            }}>
+              <div style={{
+                width: 32, height: 32,
+                background: 'var(--bg)',
+                borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-3)' }}>
+                  {idx + 1}
+                </span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: isCaptain ? 600 : 400, color: 'var(--text)' }}>
+                  {name}
+                </div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: 'var(--text-3)' }}>
+                  Time do {teamCap}
+                </div>
+              </div>
+              {isCaptain && (
+                <span style={{
+                  fontFamily: 'var(--font-body)', fontSize: 9, fontWeight: 700,
+                  color: 'var(--warning)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                  background: 'rgba(255,149,0,0.1)', border: '1px solid rgba(255,149,0,0.25)',
+                  padding: '2px 7px', borderRadius: 'var(--radius-sm)',
+                }}>CAP</span>
+              )}
+              <span style={{ color: 'var(--danger)', fontSize: 14, opacity: 0.6 }}>✕</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── Icon ────────────────────────────────────────────────── */
 
 function IconNext() {
@@ -347,6 +489,8 @@ function IconNext() {
 /* ── Main component ─────────────────────────────────────── */
 
 export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinner, onNext, onAddLatePlayer, onRemoveQueuePlayer }) {
+  const [showRemoveModal, setShowRemoveModal] = useState(false)
+
   const nextTeamA = teams.find(t => t.id === teamQueue[0])
   const nextTeamB = teams.find(t => t.id === teamQueue[1])
   const canNext   = teamQueue.length >= 2
@@ -384,6 +528,31 @@ export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinne
         {/* Add late player input — always visible */}
         <LatePlayerInput onAdd={onAddLatePlayer} />
 
+        {/* Remove player button */}
+        {teams.length > 0 && (
+          <button
+            onClick={() => setShowRemoveModal(true)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: 'transparent',
+              border: '1px solid rgba(255,59,59,0.3)',
+              borderRadius: 'var(--radius)',
+              color: 'var(--danger)',
+              fontFamily: 'var(--font-display)',
+              fontSize: 14,
+              letterSpacing: '0.1em',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
+          >
+            ✕ REMOVER JOGADOR
+          </button>
+        )}
+
         {lastWinner && <WinnerBanner winner={lastWinner} />}
 
         {nextTeamA && nextTeamB && (
@@ -407,7 +576,6 @@ export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinne
                   name={name}
                   team={team}
                   isCaptain={isCaptain}
-                  onRemove={onRemoveQueuePlayer}
                 />
               ))}
             </div>
@@ -425,6 +593,15 @@ export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinne
           <FullQueueOrder teamQueue={teamQueue} teams={teams} />
         )}
       </div>
+
+      {showRemoveModal && (
+        <RemovePlayerModal
+          teams={teams}
+          teamQueue={teamQueue}
+          onRemove={onRemoveQueuePlayer}
+          onClose={() => setShowRemoveModal(false)}
+        />
+      )}
 
       {/* PRÓXIMA PARTIDA — natural flow, below all content */}
       <div style={{ flex: 1 }} />
