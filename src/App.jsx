@@ -168,6 +168,14 @@ export default function App() {
   /* Derived */
   const getTeam = (id) => state.teams.find(t => t.id === id)
 
+  // Only complete teams are eligible to play
+  const completeQueueIds = state.teamQueue.filter(id => {
+    const t = state.teams.find(t => t.id === id)
+    return t && t.complete
+  })
+  const defaultTeamAId = completeQueueIds[0] ?? null
+  const defaultTeamBId = completeQueueIds[1] ?? null
+
   const playingIds = state.activeMatch
     ? [state.activeMatch.teamAId, state.activeMatch.teamBId]
     : completeQueueIds.slice(0, 2)
@@ -176,14 +184,6 @@ export default function App() {
     .filter(id => !playingIds.includes(id))
     .map(getTeam)
     .filter(Boolean)
-
-  // Only complete teams are eligible to play
-  const completeQueueIds = state.teamQueue.filter(id => {
-    const t = state.teams.find(t => t.id === id)
-    return t && t.complete
-  })
-  const defaultTeamAId = completeQueueIds[0] ?? null
-  const defaultTeamBId = completeQueueIds[1] ?? null
 
   /* Active match teams for passing to screens */
   const matchTeamA = state.activeMatch ? getTeam(state.activeMatch.teamAId) : null
