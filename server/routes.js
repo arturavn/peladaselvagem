@@ -303,6 +303,17 @@ router.post('/actions/remove-queue-player', async (req, res) => {
       }
     }
 
+    // Reorganize queue: complete teams first (preserving order), incomplete at end
+    const complete = state.teamQueue.filter(id => {
+      const t = state.teams.find(t => t.id === id)
+      return t && t.complete
+    })
+    const incomplete = state.teamQueue.filter(id => {
+      const t = state.teams.find(t => t.id === id)
+      return t && !t.complete
+    })
+    state.teamQueue = [...complete, ...incomplete]
+
     await saveState(state)
     res.json({ state })
   } catch (e) {

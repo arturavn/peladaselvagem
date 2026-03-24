@@ -491,9 +491,13 @@ function IconNext() {
 export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinner, onNext, onAddLatePlayer, onRemoveQueuePlayer }) {
   const [showRemoveModal, setShowRemoveModal] = useState(false)
 
-  const nextTeamA = teams.find(t => t.id === teamQueue[0])
-  const nextTeamB = teams.find(t => t.id === teamQueue[1])
-  const canNext   = teamQueue.length >= 2
+  const completeIds = teamQueue.filter(id => {
+    const t = teams.find(t => t.id === id)
+    return t && t.complete
+  })
+  const nextTeamA = teams.find(t => t.id === completeIds[0])
+  const nextTeamB = teams.find(t => t.id === completeIds[1])
+  const canNext   = completeIds.length >= 2
 
   // Players from waiting teams (not in next match)
   const waitingPlayers = waitingTeams.flatMap(team =>
