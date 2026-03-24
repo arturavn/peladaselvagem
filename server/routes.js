@@ -291,6 +291,7 @@ router.post('/actions/remove-queue-player', async (req, res) => {
         state.teams = state.teams.filter(t => t.id !== team.id)
         state.teamQueue = state.teamQueue.filter(id => id !== team.id)
       } else {
+        // Update the team with removed player
         state.teams = state.teams.map(t => {
           if (t.id !== team.id) return t
           return {
@@ -300,6 +301,24 @@ router.post('/actions/remove-queue-player', async (req, res) => {
             complete: newPlayers.length >= TEAM_SIZE,
           }
         })
+
+        // Auto-fill from last team in queue if this team became incomplete
+        if (newPlayers.length < TEAM_SIZE) {
+          const donorIds = state.teamQueue.filter(id => {
+            const t = state.teams.find(t => t.id === id)
+            return t && t.players.length > 0 && t.id !== team.id
+          })
+          if (donorIds.length > 0) {
+            const donorId = donorIds[donorIds.length - 1]
+            state.teams = fillIncompleteFromLoser(state.teams, team.id, donorId)
+            // Remove donor if now empty
+            const donorAfter = state.teams.find(t => t.id === donorId)
+            if (donorAfter && donorAfter.players.length === 0) {
+              state.teams = state.teams.filter(t => t.id !== donorId)
+              state.teamQueue = state.teamQueue.filter(id => id !== donorId)
+            }
+          }
+        }
       }
     }
 
@@ -380,6 +399,17 @@ router.post('/actions/add-late-player', async (req, res) => {
       state.teams = [...state.teams, newTeam]
       state.teamQueue = [...state.teamQueue, newTeam.id]
     }
+
+    // Reorganize queue: complete teams first, incomplete at end
+    const complete = state.teamQueue.filter(id => {
+      const t = state.teams.find(t => t.id === id)
+      return t && t.complete
+    })
+    const incomplete = state.teamQueue.filter(id => {
+      const t = state.teams.find(t => t.id === id)
+      return t && !t.complete
+    })
+    state.teamQueue = [...complete, ...incomplete]
 
     await saveState(state)
     res.json({ state })

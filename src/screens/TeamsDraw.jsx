@@ -62,10 +62,12 @@ export default function TeamsDraw({ teams, teamQueue, onContinue, onBack }) {
         </div>
       </div>
 
-      {/* ── Teams list ── */}
+      {/* ── Teams list — ordered by queue (complete first) ── */}
       <div style={{ padding: '20px 20px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {teams.map((team) => {
-          const playingPosition = completeQueueIds.indexOf(team.id)
+        {teamQueue.map(id => {
+          const team = teams.find(t => t.id === id)
+          if (!team) return null
+          const playingPosition = completeQueueIds.indexOf(id)
           return (
             <TeamCard key={team.id} team={team} queuePosition={playingPosition >= 0 && playingPosition < 2 ? playingPosition : undefined} />
           )
