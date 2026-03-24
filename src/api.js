@@ -26,6 +26,7 @@ export const api = {
   selectWinner:    (winnerTeamId)               => request('POST', '/actions/select-winner',  { winnerTeamId }),
   resolveEmpate:   (coinTossWinnerId)           => request('POST', '/actions/resolve-empate', { coinTossWinnerId }),
   pauseMatch:      (pause, remaining)           => request('POST', '/actions/pause-match',    { pause, remaining }),
+  removeQueuePlayer: (name)                     => request('POST', '/actions/remove-queue-player', { name }),
   addLatePlayer:   (name)                       => request('POST', '/actions/add-late-player',{ name }),
   nextMatch:       ()                           => request('POST', '/actions/next-match'),
   navigate:        (screen, navDir)             => request('POST', '/actions/navigate',       { screen, navDir }),

@@ -272,6 +272,46 @@ router.post('/actions/pause-match', async (req, res) => {
   }
 })
 
+/* ── POST /api/actions/remove-queue-player ─────────────── */
+router.post('/actions/remove-queue-player', async (req, res) => {
+  try {
+    const { name } = req.body
+    if (!name) return res.status(400).json({ error: 'Name is required' })
+
+    const state = await getState()
+
+    // Remove from global players list
+    state.players = state.players.filter(p => p !== name)
+
+    // Find team containing this player
+    const team = state.teams.find(t => t.players.includes(name))
+    if (team) {
+      const newPlayers = team.players.filter(p => p !== name)
+      if (newPlayers.length === 0) {
+        // Team empty — remove from teams and queue
+        state.teams = state.teams.filter(t => t.id !== team.id)
+        state.teamQueue = state.teamQueue.filter(id => id !== team.id)
+      } else {
+        state.teams = state.teams.map(t => {
+          if (t.id !== team.id) return t
+          return {
+            ...t,
+            players: newPlayers,
+            captain: newPlayers[0],
+            complete: newPlayers.length >= TEAM_SIZE,
+          }
+        })
+      }
+    }
+
+    await saveState(state)
+    res.json({ state })
+  } catch (e) {
+    console.error('POST /actions/remove-queue-player error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
 /* ── POST /api/actions/add-late-player ─────────────────── */
 router.post('/actions/add-late-player', async (req, res) => {
   try {

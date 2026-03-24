@@ -125,6 +125,14 @@ export default function App() {
     } catch (e) { console.error('resumeMatch error:', e) }
   }, [])
 
+  /* Remove player from waiting queue */
+  const removeQueuePlayer = useCallback(async (name) => {
+    try {
+      const data = await api.removeQueuePlayer(name)
+      setState(data.state)
+    } catch (e) { console.error('removeQueuePlayer error:', e) }
+  }, [])
+
   /* Add late player */
   const addLatePlayer = useCallback(async (name) => {
     try {
@@ -285,6 +293,7 @@ export default function App() {
             lastWinner={getTeam(state.lastWinnerId)}
             onNext={startNextMatch}
             onAddLatePlayer={addLatePlayer}
+            onRemoveQueuePlayer={removeQueuePlayer}
           />
         )}
       </div>

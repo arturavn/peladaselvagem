@@ -214,7 +214,7 @@ function LatePlayerInput({ onAdd }) {
 
 /* ── Queue row — neutral, no team color ─────────────────── */
 
-function QueueRow({ number, name, team, isCaptain }) {
+function QueueRow({ number, name, team, isCaptain, onRemove }) {
   const cap = team?.captain ?? team?.players?.[0] ?? ''
   return (
     <div
@@ -245,6 +245,23 @@ function QueueRow({ number, name, team, isCaptain }) {
           CAP
         </span>
       )}
+      <button
+        onClick={() => onRemove(name)}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '4px 6px',
+          color: 'var(--danger)',
+          fontSize: 16,
+          lineHeight: 1,
+          opacity: 0.7,
+          flexShrink: 0,
+        }}
+        aria-label={`Remover ${name}`}
+      >
+        ✕
+      </button>
     </div>
   )
 }
@@ -329,7 +346,7 @@ function IconNext() {
 
 /* ── Main component ─────────────────────────────────────── */
 
-export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinner, onNext, onAddLatePlayer }) {
+export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinner, onNext, onAddLatePlayer, onRemoveQueuePlayer }) {
   const nextTeamA = teams.find(t => t.id === teamQueue[0])
   const nextTeamB = teams.find(t => t.id === teamQueue[1])
   const canNext   = teamQueue.length >= 2
@@ -390,6 +407,7 @@ export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinne
                   name={name}
                   team={team}
                   isCaptain={isCaptain}
+                  onRemove={onRemoveQueuePlayer}
                 />
               ))}
             </div>
