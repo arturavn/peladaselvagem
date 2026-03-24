@@ -170,7 +170,7 @@ export default function App() {
 
   const playingIds = state.activeMatch
     ? [state.activeMatch.teamAId, state.activeMatch.teamBId]
-    : state.teamQueue.slice(0, 2)
+    : completeQueueIds.slice(0, 2)
 
   const waitingTeams = state.teamQueue
     .filter(id => !playingIds.includes(id))
