@@ -29,6 +29,7 @@ export const api = {
   removeQueuePlayer:  (name)                     => request('POST', '/actions/remove-queue-player',  { name }),
   removeMatchPlayer:  (playerName, remaining)    => request('POST', '/actions/remove-match-player',  { playerName, remaining }),
   addLatePlayer:   (name)                       => request('POST', '/actions/add-late-player',{ name }),
+  adjustTeams:           (teamQueue, teams)      => request('POST', '/actions/adjust-teams',           { teamQueue, teams }),
   setupTeamsManual:      (teams)                => request('POST', '/actions/setup-teams-manual',      { teams }),
   setInitialTeamsOrder:  (pretoId, amareloId)  => request('POST', '/actions/set-initial-teams-order', { pretoId, amareloId }),
   nextMatch:       ()                           => request('POST', '/actions/next-match'),

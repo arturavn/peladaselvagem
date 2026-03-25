@@ -156,6 +156,14 @@ export default function App() {
     } catch (e) { console.error('removeMatchPlayer error:', e) }
   }, [])
 
+  /* Adjust team queue order and/or rosters */
+  const adjustTeams = useCallback(async (teamQueue, teams) => {
+    try {
+      const data = await api.adjustTeams(teamQueue, teams)
+      setState(data.state)
+    } catch (e) { console.error('adjustTeams error:', e) }
+  }, [])
+
   /* Remove player from waiting queue */
   const removeQueuePlayer = useCallback(async (name) => {
     try {
@@ -337,6 +345,7 @@ export default function App() {
             onNext={startNextMatch}
             onAddLatePlayer={addLatePlayer}
             onRemoveQueuePlayer={removeQueuePlayer}
+            onAdjustTeams={adjustTeams}
           />
         )}
       </div>

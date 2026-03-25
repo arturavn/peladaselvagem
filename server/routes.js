@@ -647,6 +647,82 @@ router.post('/actions/navigate', async (req, res) => {
   }
 })
 
+/* ── POST /api/actions/adjust-teams ────────────────────── */
+router.post('/actions/adjust-teams', async (req, res) => {
+  try {
+    const { teamQueue: newQueue, teams: teamsPayload } = req.body
+    if (!Array.isArray(newQueue) || !Array.isArray(teamsPayload)) {
+      return res.status(400).json({ error: 'teamQueue and teams are required arrays' })
+    }
+
+    const state = await getState()
+
+    // IDs of teams actively playing — never touch those
+    const playingIds = state.activeMatch
+      ? new Set([state.activeMatch.teamAId, state.activeMatch.teamBId])
+      : new Set()
+
+    // Build updated player lists, deduplicating players across teams
+    const seen = new Set()
+    const payloadMap = {}
+    for (const entry of teamsPayload) {
+      if (playingIds.has(entry.id)) continue
+      const uniquePlayers = entry.players.filter(p => {
+        if (seen.has(p)) return false
+        seen.add(p)
+        return true
+      })
+      payloadMap[entry.id] = uniquePlayers
+    }
+
+    // Collect all players that were in queue teams originally
+    const queueSet = new Set(state.teamQueue.filter(id => !playingIds.has(id)))
+    const originalPlayers = state.teams
+      .filter(t => queueSet.has(t.id))
+      .flatMap(t => t.players)
+
+    // Floating = players that were in queue but are not in any updated team
+    const floating = originalPlayers.filter(p => !seen.has(p))
+
+    // Apply new player lists to state.teams
+    state.teams = state.teams.map(t => {
+      if (playingIds.has(t.id)) return t
+      if (!(t.id in payloadMap)) return t
+      const players = payloadMap[t.id]
+      return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
+    })
+
+    // Append floating players to the last team in the new queue
+    if (floating.length > 0 && newQueue.length > 0) {
+      const lastId = newQueue.filter(id => !playingIds.has(id)).slice(-1)[0]
+      if (lastId) {
+        state.teams = state.teams.map(t => {
+          if (t.id !== lastId) return t
+          const players = [...t.players, ...floating]
+          return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
+        })
+      }
+    }
+
+    // Remove teams with 0 players (only non-playing)
+    const emptyIds = new Set(
+      state.teams.filter(t => !playingIds.has(t.id) && t.players.length === 0).map(t => t.id)
+    )
+    state.teams = state.teams.filter(t => !emptyIds.has(t.id))
+
+    // Apply new queue order, keeping playing teams in their original positions
+    const filteredQueue = newQueue.filter(id => !playingIds.has(id) && !emptyIds.has(id))
+    const playingQueue = state.teamQueue.filter(id => playingIds.has(id))
+    state.teamQueue = [...playingQueue, ...filteredQueue]
+
+    await saveState(state)
+    res.json({ state })
+  } catch (e) {
+    console.error('POST /actions/adjust-teams error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
 /* ── POST /api/actions/reset ────────────────────────────── */
 router.post('/actions/reset', async (req, res) => {
   try {
