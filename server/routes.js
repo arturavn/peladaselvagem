@@ -8,6 +8,7 @@ import {
   TEAM_EMOJIS,
   DEFAULT_STATE,
   buildTeams,
+  buildTeamsManual,
   fillIncompleteFromLoser,
 } from './gameLogic.js'
 
@@ -78,6 +79,63 @@ router.post('/actions/sort', async (req, res) => {
     res.json({ state })
   } catch (e) {
     console.error('POST /actions/sort error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+/* ── POST /api/actions/setup-teams-manual ───────────────── */
+router.post('/actions/setup-teams-manual', async (req, res) => {
+  try {
+    const { teams: teamsData } = req.body
+    if (!teamsData || !Array.isArray(teamsData) || teamsData.length < 2) {
+      return res.status(400).json({ error: 'At least 2 teams are required' })
+    }
+
+    const state = await getState()
+    const teams = buildTeamsManual(teamsData)
+    const teamQueue = teams.map(t => t.id)
+
+    state.teams = teams
+    state.teamQueue = teamQueue
+    state.isManualSetup = true
+    state.screen = 'teams'
+    state.navDir = 'forward'
+
+    await saveState(state)
+    res.json({ state })
+  } catch (e) {
+    console.error('POST /actions/setup-teams-manual error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+/* ── POST /api/actions/set-initial-teams-order ──────────── */
+router.post('/actions/set-initial-teams-order', async (req, res) => {
+  try {
+    const { pretoId, amareloId } = req.body
+    if (!pretoId || !amareloId) {
+      return res.status(400).json({ error: 'pretoId and amareloId are required' })
+    }
+
+    const state = await getState()
+    const rest = state.teamQueue.filter(id => id !== pretoId && id !== amareloId)
+    state.teamQueue = [pretoId, amareloId, ...rest]
+    state.activeMatch = {
+      teamAId: pretoId,
+      teamBId: amareloId,
+      endTime: null,
+      duration: 7,
+      isPaused: false,
+      pausedRemaining: null,
+    }
+    state.isManualSetup = false
+    state.screen = 'selection'
+    state.navDir = 'forward'
+
+    await saveState(state)
+    res.json({ state })
+  } catch (e) {
+    console.error('POST /actions/set-initial-teams-order error:', e)
     res.status(500).json({ error: e.message })
   }
 })

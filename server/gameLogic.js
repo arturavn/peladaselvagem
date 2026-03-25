@@ -14,6 +14,7 @@ export const DEFAULT_STATE = {
   activeMatch: null,   // { teamAId, teamBId, endTime, duration, isPaused, pausedRemaining }
   lastWinnerId: null,
   showEndModal: false,
+  isManualSetup: false,
 }
 
 export function shuffle(arr) {
@@ -42,6 +43,17 @@ export function buildTeams(players) {
     })
   }
   return teams
+}
+
+export function buildTeamsManual(teamsData) {
+  return teamsData.map((teamData, idx) => ({
+    id: `team-${idx}`,
+    emoji: TEAM_EMOJIS[idx] ?? '⚽',
+    players: teamData.players,
+    captain: teamData.players[0] ?? null,
+    complete: teamData.players.length >= TEAM_SIZE,
+    wins: 0,
+  }))
 }
 
 /* Transfer players from loser team to fill an incomplete waiting team */
