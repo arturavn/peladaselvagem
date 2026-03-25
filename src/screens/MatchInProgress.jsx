@@ -538,7 +538,7 @@ export default function MatchInProgress({
         width: '100%',
         maxWidth: 390,
         padding: '10px 20px',
-        paddingBottom: 'calc(10px + var(--safe-bottom))',
+        paddingBottom: 'calc(10px + 60px + var(--safe-bottom))',
         background: 'linear-gradient(to top, var(--bg) 60%, transparent)',
         zIndex: 10,
       }}>
