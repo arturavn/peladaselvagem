@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import PlayerRegistration from './screens/PlayerRegistration'
+import ManualTeamSetup from './screens/ManualTeamSetup'
 import TeamsDraw from './screens/TeamsDraw'
 import MatchSelection from './screens/MatchSelection'
 import MatchInProgress from './screens/MatchInProgress'
@@ -77,6 +78,32 @@ export default function App() {
     } catch (e) { console.error('sortTeams error:', e) }
   }, [])
 
+  /* Navigate to manual team setup screen */
+  const goManualSetup = useCallback(async () => {
+    try {
+      const data = await api.navigate('manual-setup', 'forward')
+      setState(data.state)
+    } catch (e) {
+      setState(s => ({ ...s, screen: 'manual-setup', navDir: 'forward' }))
+    }
+  }, [])
+
+  /* Submit manually built teams */
+  const setupTeamsManual = useCallback(async (teams) => {
+    try {
+      const data = await api.setupTeamsManual(teams)
+      setState(data.state)
+    } catch (e) { console.error('setupTeamsManual error:', e) }
+  }, [])
+
+  /* Confirm PRETO/AMARELO order for manual setup */
+  const setInitialTeamsOrder = useCallback(async (pretoId, amareloId) => {
+    try {
+      const data = await api.setInitialTeamsOrder(pretoId, amareloId)
+      setState(data.state)
+    } catch (e) { console.error('setInitialTeamsOrder error:', e) }
+  }, [])
+
   /* Start a match */
   const startMatch = useCallback(async (teamAId, teamBId, duration) => {
     try {
@@ -129,6 +156,14 @@ export default function App() {
     } catch (e) { console.error('removeMatchPlayer error:', e) }
   }, [])
 
+  /* Adjust team queue order and/or rosters */
+  const adjustTeams = useCallback(async (teamQueue, teams) => {
+    try {
+      const data = await api.adjustTeams(teamQueue, teams)
+      setState(data.state)
+    } catch (e) { console.error('adjustTeams error:', e) }
+  }, [])
+
   /* Remove player from waiting queue */
   const removeQueuePlayer = useCallback(async (name) => {
     try {
@@ -177,8 +212,9 @@ export default function App() {
     const t = state.teams.find(t => t.id === id)
     return t && t.complete
   })
-  const defaultTeamAId = completeQueueIds[0] ?? null
-  const defaultTeamBId = completeQueueIds[1] ?? null
+  // Use activeMatch teams if pre-set (e.g. manual setup), otherwise fall back to queue order
+  const defaultTeamAId = state.activeMatch?.teamAId ?? completeQueueIds[0] ?? null
+  const defaultTeamBId = state.activeMatch?.teamBId ?? completeQueueIds[1] ?? null
 
   const playingIds = state.activeMatch
     ? [state.activeMatch.teamAId, state.activeMatch.teamBId]
@@ -249,9 +285,18 @@ export default function App() {
             onAdd={addPlayer}
             onRemove={removePlayer}
             onSort={sortTeams}
+            onManualSetup={goManualSetup}
             onExport={handleExport}
             onReset={handleReset}
             hasTeams={hasTeams}
+          />
+        )}
+
+        {state.screen === 'manual-setup' && (
+          <ManualTeamSetup
+            players={state.players}
+            onBack={() => go('registration', 'back')}
+            onConfirm={setupTeamsManual}
           />
         )}
 
@@ -260,7 +305,9 @@ export default function App() {
             teams={state.teams}
             teamQueue={state.teamQueue}
             onContinue={() => go('selection')}
-            onBack={() => go('registration', 'back')}
+            onBack={() => go(state.isManualSetup ? 'manual-setup' : 'registration', 'back')}
+            isManualSetup={state.isManualSetup}
+            onConfirmManual={setInitialTeamsOrder}
           />
         )}
 
@@ -298,6 +345,7 @@ export default function App() {
             onNext={startNextMatch}
             onAddLatePlayer={addLatePlayer}
             onRemoveQueuePlayer={removeQueuePlayer}
+            onAdjustTeams={adjustTeams}
           />
         )}
       </div>

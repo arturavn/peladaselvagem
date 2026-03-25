@@ -50,7 +50,7 @@ function IconTrash() {
 
 /* ── Component ───────────────────────────────────────────── */
 
-export default function PlayerRegistration({ players, onAdd, onRemove, onSort, onExport, onReset, hasTeams }) {
+export default function PlayerRegistration({ players, onAdd, onRemove, onSort, onManualSetup, onExport, onReset, hasTeams }) {
   const [input, setInput] = useState('')
   const [exportToast, setExportToast] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
@@ -296,6 +296,23 @@ export default function PlayerRegistration({ players, onAdd, onRemove, onSort, o
             {exportToast ? 'COPIADO!' : 'EXPORTAR LISTA'}
           </button>
         )}
+
+        <button
+          className="btn"
+          onClick={onManualSetup}
+          disabled={!canSort}
+          style={{
+            height: 48,
+            marginBottom: 10,
+            fontSize: 15,
+            letterSpacing: '0.08em',
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.12)',
+            color: canSort ? 'var(--text-2)' : 'var(--text-3)',
+          }}
+        >
+          MONTAR TIMES
+        </button>
 
         <button
           className="btn btn-primary"

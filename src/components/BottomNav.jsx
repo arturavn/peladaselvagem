@@ -109,6 +109,7 @@ export default function BottomNav({ screen, hasTeams, hasHistory, activeMatch, o
     screen === 'match' || screen === 'selection' ? 'match'
     : screen === 'teams' ? 'draws'
     : screen === 'queue' ? 'waitlist'
+    : screen === 'manual-setup' ? 'home'
     : 'home'
 
   const matchTarget = activeMatch ? 'match' : 'selection'
