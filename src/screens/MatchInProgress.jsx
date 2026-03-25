@@ -115,6 +115,128 @@ function TeamBox({ team, role }) {
   )
 }
 
+/* ── Substitution Modal ─────────────────────────────────── */
+
+function SubModal({ teamA, teamB, onClose, onRemove }) {
+  const [confirm, setConfirm] = useState(null)
+
+  const overlay = {
+    position: 'fixed', inset: 0, zIndex: 100,
+    background: 'rgba(0,0,0,0.75)',
+    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+  }
+  const sheet = {
+    width: '100%', maxWidth: 390,
+    background: 'var(--surface)',
+    borderRadius: '20px 20px 0 0',
+    padding: '24px 20px',
+    paddingBottom: 'calc(24px + var(--safe-bottom))',
+    maxHeight: '80dvh',
+    overflowY: 'auto',
+  }
+
+  if (confirm) {
+    return (
+      <div style={overlay}>
+        <div style={sheet}>
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.06em', color: 'var(--text)', marginBottom: 8 }}>
+            REMOVER {confirm.toUpperCase()}?
+          </p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-3)', marginBottom: 24 }}>
+            Ele sai da partida mas permanece na lista de exportação. O sistema chama o próximo da fila para substituir.
+          </p>
+          <button
+            onClick={() => { onRemove(confirm); setConfirm(null); onClose() }}
+            style={{
+              width: '100%', height: 52, marginBottom: 10,
+              background: 'var(--danger)', border: 'none',
+              borderRadius: 'var(--radius)', fontFamily: 'var(--font-display)',
+              fontSize: 18, letterSpacing: '0.1em', color: '#fff', cursor: 'pointer',
+            }}
+          >
+            SIM, REMOVER
+          </button>
+          <button
+            onClick={() => setConfirm(null)}
+            style={{
+              width: '100%', height: 48,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 'var(--radius)', fontFamily: 'var(--font-display)',
+              fontSize: 16, letterSpacing: '0.1em', color: 'var(--text-2)', cursor: 'pointer',
+            }}
+          >
+            CANCELAR
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={overlay}>
+      <div style={sheet}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 22, letterSpacing: '0.08em', color: 'var(--text)' }}>
+            SUBSTITUIÇÃO
+          </span>
+          <button
+            onClick={onClose}
+            style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.08)', border: 'none',
+              color: 'var(--text-2)', fontSize: 16, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >✕</button>
+        </div>
+
+        {[teamA, teamB].filter(Boolean).map((team, ti) => (
+          <div key={team.id} style={{ marginBottom: ti === 0 ? 20 : 0 }}>
+            <div style={{
+              fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700,
+              letterSpacing: '0.14em', color: ti === 0 ? '#888' : '#c8a400',
+              marginBottom: 8, textTransform: 'uppercase',
+            }}>
+              {ti === 0 ? '⚫ PRETO' : '🟡 AMARELO'}
+            </div>
+            {(team.players ?? []).map((player) => (
+              <div
+                key={player}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 12px', marginBottom: 6,
+                  background: 'rgba(255,255,255,0.04)',
+                  borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text)' }}>
+                  {player}
+                  {player === team.captain && (
+                    <span style={{ marginLeft: 8, fontSize: 10, color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.1em' }}>CAP</span>
+                  )}
+                </span>
+                <button
+                  onClick={() => setConfirm(player)}
+                  style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: 'rgba(255,59,59,0.15)',
+                    border: '1px solid rgba(255,59,59,0.3)',
+                    color: 'var(--danger)', fontSize: 14, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >✕</button>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /* ── Main component ─────────────────────────────────────── */
 
 export default function MatchInProgress({
@@ -127,6 +249,7 @@ export default function MatchInProgress({
   pausedRemaining,
   onPause,
   onResume,
+  onRemoveMatchPlayer,
 }) {
   // activeEndTime: null when paused (freezes useTimer)
   const activeEndTime = isPaused ? null : endTime
@@ -140,8 +263,15 @@ export default function MatchInProgress({
   const isDanger   = displayMs <= 30_000 && displayMs > 0 && !isPaused
   const progress   = totalMs > 0 ? Math.max(0, displayMs / totalMs) : 0
 
+  const [showSubModal, setShowSubModal] = useState(false)
+
   const handlePause  = () => onPause(remaining)
   const handleResume = () => onResume()
+
+  const handleOpenSub = () => {
+    if (!isPaused) onPause(remaining)
+    setShowSubModal(true)
+  }
 
   // Auto-end when time runs out (only when not paused)
   const [autoEnded, setAutoEnded] = useState(false)
@@ -340,6 +470,29 @@ export default function MatchInProgress({
           </div>
         </div>
 
+        {/* Substituir jogador */}
+        <button
+          onClick={handleOpenSub}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            width: '100%',
+            height: 44,
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 'var(--radius)',
+            fontFamily: 'var(--font-display)',
+            fontSize: 15,
+            letterSpacing: '0.1em',
+            color: 'var(--text-3)',
+            cursor: 'pointer',
+          }}
+        >
+          ↔ SUBSTITUIR JOGADOR
+        </button>
+
         {/* Pause / Resume button */}
         <button
           onClick={isPaused ? handleResume : handlePause}
@@ -365,6 +518,16 @@ export default function MatchInProgress({
           {isPaused ? 'RETOMAR' : 'PAUSAR'}
         </button>
       </div>
+
+      {/* Substitution modal */}
+      {showSubModal && (
+        <SubModal
+          teamA={teamA}
+          teamB={teamB}
+          onClose={() => setShowSubModal(false)}
+          onRemove={(playerName) => onRemoveMatchPlayer(playerName, remaining)}
+        />
+      )}
 
       {/* ENCERRAR button — fixed at bottom */}
       <div style={{

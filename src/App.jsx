@@ -125,6 +125,14 @@ export default function App() {
     } catch (e) { console.error('resumeMatch error:', e) }
   }, [])
 
+  /* Remove player from active match (substitution) */
+  const removeMatchPlayer = useCallback(async (playerName, remaining) => {
+    try {
+      const data = await api.removeMatchPlayer(playerName, remaining)
+      setState(data.state)
+    } catch (e) { console.error('removeMatchPlayer error:', e) }
+  }, [])
+
   /* Remove player from waiting queue */
   const removeQueuePlayer = useCallback(async (name) => {
     try {
@@ -282,6 +290,7 @@ export default function App() {
             onEnd={endMatch}
             onPause={pauseMatch}
             onResume={resumeMatch}
+            onRemoveMatchPlayer={removeMatchPlayer}
           />
         )}
 

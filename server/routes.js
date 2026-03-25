@@ -138,6 +138,25 @@ router.post('/actions/select-winner', async (req, res) => {
     const { teamAId, teamBId } = state.activeMatch
     // 2. Get loserId
     const loserId = winnerTeamId === teamAId ? teamBId : teamAId
+
+    // 2b. Return substituted players to their original team if loser had subs
+    const subs = state.activeMatch.substitutions ?? []
+    for (const sub of subs) {
+      if (sub.toTeamId === loserId) {
+        teams = teams.map(t => {
+          if (t.id === loserId) {
+            const players = t.players.filter(p => p !== sub.player)
+            return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
+          }
+          if (t.id === sub.fromTeamId) {
+            const players = [...t.players, sub.player]
+            return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
+          }
+          return t
+        })
+      }
+    }
+
     // 3. Get rest = teamQueue filtered to remove both playing teams
     const rest = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
 
@@ -197,6 +216,25 @@ router.post('/actions/resolve-empate', async (req, res) => {
     let teams = [...state.teams]
     const { teamAId, teamBId } = state.activeMatch
     const loserId = coinTossWinnerId === teamAId ? teamBId : teamAId
+
+    // Return substituted players to their original team if loser had subs
+    const subs = state.activeMatch.substitutions ?? []
+    for (const sub of subs) {
+      if (sub.toTeamId === loserId) {
+        teams = teams.map(t => {
+          if (t.id === loserId) {
+            const players = t.players.filter(p => p !== sub.player)
+            return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
+          }
+          if (t.id === sub.fromTeamId) {
+            const players = [...t.players, sub.player]
+            return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
+          }
+          return t
+        })
+      }
+    }
+
     const rest = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
 
     // If next waiting team is incomplete, fill from loser
@@ -234,6 +272,85 @@ router.post('/actions/resolve-empate', async (req, res) => {
     res.json({ state })
   } catch (e) {
     console.error('POST /actions/resolve-empate error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+/* ── POST /api/actions/remove-match-player ─────────────── */
+router.post('/actions/remove-match-player', async (req, res) => {
+  try {
+    const { playerName, remaining } = req.body
+    if (!playerName) return res.status(400).json({ error: 'playerName required' })
+
+    const state = await getState()
+    if (!state.activeMatch) return res.status(400).json({ error: 'No active match' })
+
+    const { teamAId, teamBId } = state.activeMatch
+
+    // Find which playing team the player is on
+    const playerTeam = state.teams.find(t =>
+      (t.id === teamAId || t.id === teamBId) && t.players.includes(playerName)
+    )
+    if (!playerTeam) return res.status(400).json({ error: 'Player not found in active match' })
+
+    // Remove player from their team (stays in state.players for export)
+    const newPlayers = playerTeam.players.filter(p => p !== playerName)
+    state.teams = state.teams.map(t => {
+      if (t.id !== playerTeam.id) return t
+      return { ...t, players: newPlayers, captain: newPlayers[0] ?? null, complete: newPlayers.length >= TEAM_SIZE }
+    })
+
+    // Find next player from last waiting team (not currently playing)
+    const waitingIds = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
+    let substitution = null
+
+    for (let i = waitingIds.length - 1; i >= 0; i--) {
+      const donor = state.teams.find(t => t.id === waitingIds[i])
+      if (donor && donor.players.length > 0) {
+        const subPlayer = donor.players[donor.players.length - 1]
+        const donorNewPlayers = donor.players.filter(p => p !== subPlayer)
+
+        // Remove sub from donor team
+        state.teams = state.teams.map(t => {
+          if (t.id !== donor.id) return t
+          return { ...t, players: donorNewPlayers, captain: donorNewPlayers[0] ?? null, complete: donorNewPlayers.length >= TEAM_SIZE }
+        })
+
+        // Add sub to depleted playing team
+        const subTeamPlayers = [...newPlayers, subPlayer]
+        state.teams = state.teams.map(t => {
+          if (t.id !== playerTeam.id) return t
+          return { ...t, players: subTeamPlayers, captain: subTeamPlayers[0], complete: subTeamPlayers.length >= TEAM_SIZE }
+        })
+
+        // Remove donor if now empty
+        if (donorNewPlayers.length === 0) {
+          state.teams = state.teams.filter(t => t.id !== donor.id)
+          state.teamQueue = state.teamQueue.filter(id => id !== donor.id)
+        }
+
+        // Track substitution: sub player's original team
+        substitution = { player: subPlayer, fromTeamId: donor.id, toTeamId: playerTeam.id }
+        break
+      }
+    }
+
+    // Pause timer
+    state.activeMatch = {
+      ...state.activeMatch,
+      isPaused: true,
+      pausedRemaining: remaining ?? state.activeMatch.pausedRemaining ?? 0,
+      endTime: null,
+      substitutions: [
+        ...(state.activeMatch.substitutions ?? []),
+        ...(substitution ? [substitution] : []),
+      ],
+    }
+
+    await saveState(state)
+    res.json({ state })
+  } catch (e) {
+    console.error('POST /actions/remove-match-player error:', e)
     res.status(500).json({ error: e.message })
   }
 })
