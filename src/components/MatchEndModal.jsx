@@ -190,7 +190,7 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
           borderTop: `1px solid ${empateMode ? 'rgba(255,149,0,0.3)' : 'rgba(0,255,135,0.2)'}`,
           borderRadius: '16px 16px 0 0',
           padding: '28px 24px',
-          paddingBottom: 'calc(28px + var(--safe-bottom))',
+          paddingBottom: 'calc(28px + 60px + var(--safe-bottom))',
           position: 'relative',
           animation: 'modalIn 0.32s cubic-bezier(0.25,0.46,0.45,0.94) both',
           transition: 'border-color 0.3s ease',
