@@ -156,6 +156,14 @@ export default function App() {
     } catch (e) { console.error('removeMatchPlayer error:', e) }
   }, [])
 
+  /* Change teams in active match */
+  const changeMatchTeams = useCallback(async (teamAId, teamBId, remaining) => {
+    try {
+      const data = await api.changeMatchTeams(teamAId, teamBId, remaining)
+      setState(data.state)
+    } catch (e) { console.error('changeMatchTeams error:', e) }
+  }, [])
+
   /* Adjust team queue order and/or rosters */
   const adjustTeams = useCallback(async (teamQueue, teams) => {
     try {
@@ -329,10 +337,12 @@ export default function App() {
             pausedRemaining={state.activeMatch.pausedRemaining}
             teamA={matchTeamA}
             teamB={matchTeamB}
+            allTeams={state.teams}
             onEnd={endMatch}
             onPause={pauseMatch}
             onResume={resumeMatch}
             onRemoveMatchPlayer={removeMatchPlayer}
+            onChangeMatchTeams={changeMatchTeams}
           />
         )}
 
