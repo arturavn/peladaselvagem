@@ -95,18 +95,14 @@ export default function App() {
 
   /* Select winner */
   const selectWinner = useCallback(async (winnerTeamId) => {
-    try {
-      const data = await api.selectWinner(winnerTeamId)
-      setState(data.state)
-    } catch (e) { console.error('selectWinner error:', e) }
+    const data = await api.selectWinner(winnerTeamId)
+    setState(data.state)
   }, [])
 
   /* Resolve empate */
   const resolveEmpate = useCallback(async (coinTossWinnerId) => {
-    try {
-      const data = await api.resolveEmpate(coinTossWinnerId)
-      setState(data.state)
-    } catch (e) { console.error('resolveEmpate error:', e) }
+    const data = await api.resolveEmpate(coinTossWinnerId)
+    setState(data.state)
   }, [])
 
   /* Pause match */
@@ -317,7 +313,7 @@ export default function App() {
         />
       )}
 
-      {state.showEndModal && (
+      {state.showEndModal && state.activeMatch && (
         <MatchEndModal
           teamA={matchTeamA}
           teamB={matchTeamB}

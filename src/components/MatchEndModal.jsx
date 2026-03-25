@@ -153,15 +153,21 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
   const [showConfetti, setShowConfetti] = useState(false)
   const [empateMode, setEmpateMode] = useState(false)
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!selected || confirming) return
     setConfirming(true)
-    if (empateMode) {
-      // Coin toss: rotate queue, no win recorded
-      setTimeout(() => onEmpate(selected.id), 600)
-    } else {
-      setShowConfetti(true)
-      setTimeout(() => onSelect(selected.id), 1400)
+    try {
+      if (empateMode) {
+        await onEmpate(selected.id)
+      } else {
+        setShowConfetti(true)
+        await new Promise(r => setTimeout(r, 800))
+        await onSelect(selected.id)
+      }
+    } catch (e) {
+      console.error('confirm error:', e)
+      setConfirming(false)
+      setShowConfetti(false)
     }
   }
 
