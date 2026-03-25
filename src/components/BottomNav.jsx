@@ -1,3 +1,24 @@
+import { useState, useEffect } from 'react'
+
+/* ── Mini timer hook ─────────────────────────────────────── */
+function useMiniTimer(activeMatch) {
+  const [ms, setMs] = useState(0)
+  useEffect(() => {
+    if (!activeMatch) { setMs(0); return }
+    const update = () => {
+      if (activeMatch.isPaused) {
+        setMs(activeMatch.pausedRemaining ?? 0)
+      } else {
+        setMs(Math.max(0, (activeMatch.endTime ?? 0) - Date.now()))
+      }
+    }
+    update()
+    const id = setInterval(update, 1000)
+    return () => clearInterval(id)
+  }, [activeMatch])
+  return ms
+}
+
 /* ── Bottom Navigation ───────────────────────────────────── */
 
 function IconHome({ active }) {
@@ -77,17 +98,25 @@ export function getInitials(name = '') {
 
 /* ── Component ─────────────────────────────────────────── */
 
-export default function BottomNav({ screen, hasTeams, hasHistory, onNavigate }) {
+export default function BottomNav({ screen, hasTeams, hasHistory, activeMatch, onNavigate }) {
+  const remainingMs = useMiniTimer(activeMatch)
+  const mins = Math.floor(remainingMs / 60000)
+  const secs = Math.floor((remainingMs % 60000) / 1000)
+  const timerStr = `${mins}:${String(secs).padStart(2, '0')}`
+  const timerRunning = activeMatch && !activeMatch.isPaused
+
   const activeTab =
     screen === 'match' || screen === 'selection' ? 'match'
     : screen === 'teams' ? 'draws'
     : screen === 'queue' ? 'waitlist'
     : 'home'
 
+  const matchTarget = activeMatch ? 'match' : 'selection'
+
   const tabs = [
     { id: 'home',     targetScreen: 'registration', label: 'HOME',     Icon: IconHome,     available: true },
     { id: 'draws',    targetScreen: 'teams',         label: 'DRAWS',    Icon: IconDraws,    available: hasTeams },
-    { id: 'match',    targetScreen: 'selection',     label: 'MATCH',    Icon: IconMatch,    available: hasTeams },
+    { id: 'match',    targetScreen: matchTarget,     label: 'MATCH',    Icon: IconMatch,    available: hasTeams },
     { id: 'waitlist', targetScreen: 'queue',          label: 'WAITLIST', Icon: IconWaitlist, available: hasHistory },
   ]
 
@@ -96,15 +125,39 @@ export default function BottomNav({ screen, hasTeams, hasHistory, onNavigate }) 
       {tabs.map(tab => {
         const isActive = activeTab === tab.id
         const isDisabled = !tab.available
+        const isMatchTab = tab.id === 'match'
+        const showTimer = isMatchTab && activeMatch
+
         return (
           <button
             key={tab.id}
             className={`bnav-tab${isActive ? ' bnav-active' : ''}${isDisabled ? ' bnav-disabled' : ''}`}
             onClick={() => !isDisabled && onNavigate(tab.targetScreen)}
           >
-            <div className="bnav-icon">
-              <tab.Icon active={isActive} />
-            </div>
+            {showTimer ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+              }}>
+                <span style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 13,
+                  letterSpacing: '0.05em',
+                  color: timerRunning ? 'var(--accent)' : '#888',
+                  lineHeight: 1,
+                  animation: timerRunning ? 'timerPulse 2s ease-in-out infinite' : 'none',
+                }}>
+                  {timerStr}
+                </span>
+                <tab.Icon active={isActive} />
+              </div>
+            ) : (
+              <div className="bnav-icon">
+                <tab.Icon active={isActive} />
+              </div>
+            )}
             <span className="bnav-label">{tab.label}</span>
             {isActive && <div className="bnav-dot" />}
           </button>

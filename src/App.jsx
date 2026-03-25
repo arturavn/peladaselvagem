@@ -204,8 +204,7 @@ export default function App() {
   const hasTeams = state.teams.length > 0
   const hasHistory = !!state.lastWinnerId
 
-  /* Hide bottom nav during active match (full-screen experience) */
-  const showBottomNav = state.screen !== 'match'
+  const showBottomNav = true
 
   /* Loading screen */
   if (loading) {
@@ -313,6 +312,7 @@ export default function App() {
           screen={state.screen}
           hasTeams={hasTeams}
           hasHistory={hasHistory}
+          activeMatch={state.activeMatch}
           onNavigate={go}
         />
       )}
