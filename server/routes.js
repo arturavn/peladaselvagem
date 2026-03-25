@@ -647,6 +647,33 @@ router.post('/actions/navigate', async (req, res) => {
   }
 })
 
+/* ── POST /api/actions/change-match-teams ───────────────── */
+router.post('/actions/change-match-teams', async (req, res) => {
+  try {
+    const { teamAId, teamBId, remaining } = req.body
+    if (!teamAId || !teamBId) {
+      return res.status(400).json({ error: 'teamAId and teamBId are required' })
+    }
+    const state = await getState()
+    if (!state.activeMatch) {
+      return res.status(400).json({ error: 'No active match' })
+    }
+    state.activeMatch = {
+      ...state.activeMatch,
+      teamAId,
+      teamBId,
+      isPaused: true,
+      pausedRemaining: remaining ?? state.activeMatch.pausedRemaining ?? 0,
+      endTime: null,
+    }
+    await saveState(state)
+    res.json({ state })
+  } catch (e) {
+    console.error('POST /actions/change-match-teams error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
 /* ── POST /api/actions/adjust-teams ────────────────────── */
 router.post('/actions/adjust-teams', async (req, res) => {
   try {
