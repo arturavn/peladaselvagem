@@ -137,15 +137,46 @@ function WinnerBanner({ winner }) {
 
 /* ── Late player input ──────────────────────────────────── */
 
-function LatePlayerInput({ onAdd }) {
-  const [input, setInput] = useState('')
-  const [toast, setToast] = useState(false)
+const firstWord = str => str.trim().split(/\s+/)[0].toLowerCase()
+
+function LatePlayerInput({ onAdd, allPlayers }) {
+  const [input, setInput]   = useState('')
+  const [toast, setToast]   = useState(false)
+  const [pending, setPending] = useState('') // name waiting for surname
+  const [warn, setWarn]     = useState('')   // duplicate warning message
   const inputRef = useRef(null)
 
   const handleAdd = () => {
-    const n = input.trim()
-    if (!n) return
-    onAdd(n)
+    const val = input.trim()
+    if (!val) return
+
+    if (pending) {
+      // Surname step — combine and check full name
+      const full = `${pending} ${val}`
+      const conflict = allPlayers.some(p => p.toLowerCase() === full.toLowerCase())
+      if (conflict) {
+        setPending(full)
+        setInput('')
+        setWarn(`Já existe "${full}". Informe outro sobrenome:`)
+        inputRef.current?.focus()
+        return
+      }
+      onAdd(full)
+      setPending('')
+      setWarn('')
+    } else {
+      // First-name step — check if first word clashes
+      const conflict = allPlayers.some(p => firstWord(p) === firstWord(val))
+      if (conflict) {
+        setPending(val)
+        setInput('')
+        setWarn(`Já existe um "${val}". Informe o sobrenome:`)
+        inputRef.current?.focus()
+        return
+      }
+      onAdd(val)
+    }
+
     setInput('')
     inputRef.current?.focus()
     setToast(true)
@@ -154,6 +185,13 @@ function LatePlayerInput({ onAdd }) {
 
   const handleKey = (e) => {
     if (e.key === 'Enter') handleAdd()
+  }
+
+  const handleCancel = () => {
+    setPending('')
+    setWarn('')
+    setInput('')
+    inputRef.current?.focus()
   }
 
   return (
@@ -192,6 +230,27 @@ function LatePlayerInput({ onAdd }) {
           </span>
         )}
       </div>
+
+      {warn && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+          padding: '8px 10px',
+          background: 'rgba(255,208,0,0.08)',
+          border: '1px solid rgba(255,208,0,0.25)',
+          borderRadius: 'var(--radius-sm)',
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--warning)', lineHeight: 1.4,
+          }}>
+            {warn}
+          </span>
+          <button onClick={handleCancel} style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: 'var(--text-3)', fontSize: 14, padding: '0 2px', flexShrink: 0,
+          }}>✕</button>
+        </div>
+      )}
+
       <div className="input-group">
         <input
           ref={inputRef}
@@ -199,7 +258,7 @@ function LatePlayerInput({ onAdd }) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey}
-          placeholder="Nome do jogador…"
+          placeholder={pending ? `Sobrenome de ${pending}…` : 'Nome do jogador…'}
           maxLength={24}
           autoComplete="off"
           autoCorrect="off"
@@ -873,7 +932,7 @@ export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinne
       <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* Add late player input — always visible */}
-        <LatePlayerInput onAdd={onAddLatePlayer} />
+        <LatePlayerInput onAdd={onAddLatePlayer} allPlayers={teams.flatMap(t => t.players)} />
 
         {/* Adjust teams button */}
         {teams.length > 0 && (
