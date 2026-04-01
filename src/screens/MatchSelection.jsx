@@ -94,7 +94,7 @@ function TeamPickerModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, 
                     padding: '14px 20px',
                     borderBottom: '1px solid var(--border)',
                     cursor: 'pointer',
-                    background: isSelected ? 'rgba(0,255,135,0.04)' : 'transparent',
+                    background: isSelected ? 'rgba(255,85,0,0.04)' : 'transparent',
                   }}
                 >
                   <div style={{
@@ -533,7 +533,7 @@ export default function MatchSelection({
                   style={{
                     flex: 1,
                     height: 64,
-                    background: isActive ? 'rgba(0,255,135,0.08)' : 'var(--surface)',
+                    background: isActive ? 'rgba(255,85,0,0.08)' : 'var(--surface)',
                     border: `1.5px solid ${isActive ? 'var(--accent)' : 'rgba(255,255,255,0.06)'}`,
                     borderRadius: 'var(--radius)',
                     display: 'flex',

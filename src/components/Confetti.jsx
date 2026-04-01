@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 
-const COLORS = ['#00FF87', '#00C96A', '#FFD700', '#FF9500', '#ffffff', '#00C9FF']
+const COLORS = ['#FF5500', '#FF7A2E', '#FFD000', '#FFEB80', '#ffffff', '#FF3030']
 const COUNT = 90
 
 function randomBetween(a, b) {

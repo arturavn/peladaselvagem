@@ -216,7 +216,7 @@ export default function PlayerRegistration({ players, onAdd, onRemove, onSort, o
                 <span className="num">{players.length}</span>
                 {players.length === 1 ? 'jogador' : 'jogadores'}
                 {teamsCount > 0 && (
-                  <span style={{ color: 'rgba(0,255,135,0.6)', fontSize: 10 }}>
+                  <span style={{ color: 'rgba(255,85,0,0.6)', fontSize: 10 }}>
                     · {teamsCount} {teamsCount === 1 ? 'time' : 'times'}
                     {waitingCount > 0 ? ` +${waitingCount}` : ''}
                   </span>
@@ -283,7 +283,7 @@ export default function PlayerRegistration({ players, onAdd, onRemove, onSort, o
               fontSize: 14,
               letterSpacing: '0.08em',
               background: 'transparent',
-              border: '1px solid rgba(0,255,135,0.25)',
+              border: '1px solid rgba(255,85,0,0.25)',
               color: exportToast ? 'var(--accent)' : 'var(--text-2)',
               display: 'flex',
               alignItems: 'center',
@@ -334,7 +334,7 @@ function PlayerChip({ name, onRemove, isNew }) {
   return (
     <div
       className="chip"
-      style={isNew ? { borderColor: 'rgba(0,255,135,0.35)' } : undefined}
+      style={isNew ? { borderColor: 'rgba(255,85,0,0.35)' } : undefined}
     >
       <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {name}
@@ -353,8 +353,8 @@ function TeamsPreviewInfo({ count }) {
   return (
     <div style={{
       padding: '12px 14px',
-      background: 'rgba(0,255,135,0.04)',
-      border: '1px solid rgba(0,255,135,0.12)',
+      background: 'rgba(255,85,0,0.04)',
+      border: '1px solid rgba(255,85,0,0.12)',
       borderRadius: 'var(--radius)',
       display: 'flex',
       flexDirection: 'column',

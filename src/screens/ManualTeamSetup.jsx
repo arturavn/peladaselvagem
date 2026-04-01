@@ -123,8 +123,8 @@ export default function ManualTeamSetup({ players, onBack, onConfirm }) {
           {unassigned.length === 0 ? (
             <div style={{
               padding: '10px 14px',
-              background: 'rgba(0,255,135,0.04)',
-              border: '1px solid rgba(0,255,135,0.12)',
+              background: 'rgba(255,85,0,0.04)',
+              border: '1px solid rgba(255,85,0,0.12)',
               borderRadius: 'var(--radius)',
               fontFamily: 'var(--font-body)',
               fontSize: 12,
@@ -146,8 +146,8 @@ export default function ManualTeamSetup({ players, onBack, onConfirm }) {
                       fontWeight: 600,
                       padding: '6px 12px',
                       borderRadius: 999,
-                      border: '1px solid rgba(0,255,135,0.4)',
-                      background: 'rgba(0,255,135,0.06)',
+                      border: '1px solid rgba(255,85,0,0.4)',
+                      background: 'rgba(255,85,0,0.06)',
                       color: 'var(--accent)',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
@@ -208,9 +208,9 @@ export default function ManualTeamSetup({ players, onBack, onConfirm }) {
                 style={{
                   cursor: 'pointer',
                   border: isActive
-                    ? '1px solid rgba(0,255,135,0.4)'
+                    ? '1px solid rgba(255,85,0,0.4)'
                     : '1px solid rgba(255,255,255,0.06)',
-                  background: isActive ? 'rgba(0,255,135,0.04)' : 'var(--surface)',
+                  background: isActive ? 'rgba(255,85,0,0.04)' : 'var(--surface)',
                   transition: 'border-color 0.15s ease, background 0.15s ease',
                 }}
               >

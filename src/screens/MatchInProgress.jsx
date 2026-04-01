@@ -531,10 +531,10 @@ export default function MatchInProgress({
           padding: '5px 14px',
           background: isPaused
             ? 'rgba(255,149,0,0.1)'
-            : isDanger ? 'rgba(255,59,59,0.12)' : 'rgba(0,255,135,0.08)',
+            : isDanger ? 'rgba(255,59,59,0.12)' : 'rgba(255,85,0,0.08)',
           border: `1px solid ${isPaused
             ? 'rgba(255,149,0,0.3)'
-            : isDanger ? 'rgba(255,59,59,0.3)' : 'rgba(0,255,135,0.25)'}`,
+            : isDanger ? 'rgba(255,59,59,0.3)' : 'rgba(255,85,0,0.25)'}`,
           borderRadius: 20,
           transition: 'all 0.4s ease',
         }}>
@@ -611,7 +611,7 @@ export default function MatchInProgress({
                 ? '0 0 40px rgba(255,149,0,0.25)'
                 : isDanger
                   ? '0 0 48px rgba(255,59,59,0.5)'
-                  : '0 0 40px rgba(0,255,135,0.12)',
+                  : '0 0 40px rgba(255,85,0,0.12)',
               transition: 'color 0.4s ease, text-shadow 0.4s ease',
               userSelect: 'none',
               opacity: isPaused ? 0.75 : 1,
