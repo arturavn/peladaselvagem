@@ -317,7 +317,7 @@ function SubModal({ teamA, teamB, onClose, onRemove }) {
   const [confirm, setConfirm] = useState(null)
 
   const overlay = {
-    position: 'fixed', inset: 0, zIndex: 100,
+    position: 'fixed', inset: 0, zIndex: 300,
     background: 'rgba(0,0,0,0.75)',
     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
   }
@@ -327,7 +327,7 @@ function SubModal({ teamA, teamB, onClose, onRemove }) {
     borderRadius: '20px 20px 0 0',
     padding: '24px 20px',
     paddingBottom: 'calc(24px + var(--safe-bottom))',
-    maxHeight: '80dvh',
+    maxHeight: '90dvh',
     overflowY: 'auto',
   }
 

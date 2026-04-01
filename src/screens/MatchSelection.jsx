@@ -39,7 +39,7 @@ function TeamPickerModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, 
   const teamB = getTeam(selectedB)
 
   const overlay = {
-    position: 'fixed', inset: 0, zIndex: 100,
+    position: 'fixed', inset: 0, zIndex: 300,
     background: 'rgba(0,0,0,0.85)',
     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
   }
@@ -47,8 +47,9 @@ function TeamPickerModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, 
     width: '100%', maxWidth: 390,
     background: 'var(--surface)',
     borderRadius: '20px 20px 0 0',
-    maxHeight: '85dvh',
+    maxHeight: '90dvh',
     display: 'flex', flexDirection: 'column',
+    paddingBottom: 'var(--safe-bottom)',
   }
 
   const canConfirm = selectedA && selectedB && selectedA !== selectedB
