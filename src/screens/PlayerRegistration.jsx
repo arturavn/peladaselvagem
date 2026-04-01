@@ -159,7 +159,17 @@ export default function PlayerRegistration({ players, onAdd, onRemove, onSort, o
 
       {/* ── Header ── */}
       <div className="screen-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Logo />
+        <div>
+          <Logo />
+          {/* Pitch-line decoration under logo */}
+          <div style={{
+            marginTop: 6,
+            height: 2,
+            width: 48,
+            background: 'linear-gradient(90deg, var(--accent) 0%, transparent 100%)',
+            borderRadius: 1,
+          }} />
+        </div>
         {players.length > 0 && (
           <button
             onClick={() => setShowResetConfirm(true)}

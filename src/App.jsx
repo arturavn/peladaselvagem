@@ -7,6 +7,7 @@ import MatchInProgress from './screens/MatchInProgress'
 import WaitingQueue from './screens/WaitingQueue'
 import MatchEndModal from './components/MatchEndModal'
 import BottomNav from './components/BottomNav'
+import MatchStartAnimation from './components/MatchStartAnimation'
 import { api } from './api'
 
 /* ── Constants (still needed for MIN_PLAYERS_TO_SORT export) ── */
@@ -29,6 +30,7 @@ const DEFAULT_STATE = {
 export default function App() {
   const [state, setState] = useState(DEFAULT_STATE)
   const [loading, setLoading] = useState(true)
+  const [showMatchAnimation, setShowMatchAnimation] = useState(false)
 
   // On mount: fetch state from API
   useEffect(() => {
@@ -109,6 +111,7 @@ export default function App() {
     try {
       const data = await api.startMatch(teamAId, teamBId, duration)
       setState(data.state)
+      setShowMatchAnimation(true)
     } catch (e) { console.error('startMatch error:', e) }
   }, [])
 
@@ -359,6 +362,14 @@ export default function App() {
           />
         )}
       </div>
+
+      {showMatchAnimation && matchTeamA && matchTeamB && (
+        <MatchStartAnimation
+          teamA={matchTeamA}
+          teamB={matchTeamB}
+          onComplete={() => setShowMatchAnimation(false)}
+        />
+      )}
 
       {/* Bottom navigation — hidden during match */}
       {showBottomNav && (
