@@ -139,7 +139,7 @@ function WinnerBanner({ winner }) {
 
 const firstWord = str => str.trim().split(/\s+/)[0].toLowerCase()
 
-function LatePlayerInput({ onAdd, allPlayers }) {
+function LatePlayerInput({ onAdd, allPlayers = [] }) {
   const [input, setInput]   = useState('')
   const [toast, setToast]   = useState(false)
   const [pending, setPending] = useState('') // name waiting for surname
@@ -153,7 +153,7 @@ function LatePlayerInput({ onAdd, allPlayers }) {
     if (pending) {
       // Surname step — combine and check full name
       const full = `${pending} ${val}`
-      const conflict = allPlayers.some(p => p.toLowerCase() === full.toLowerCase())
+      const conflict = allPlayers.some(p => p && p.toLowerCase() === full.toLowerCase())
       if (conflict) {
         setPending(full)
         setInput('')
@@ -166,7 +166,7 @@ function LatePlayerInput({ onAdd, allPlayers }) {
       setWarn('')
     } else {
       // First-name step — check if first word clashes
-      const conflict = allPlayers.some(p => firstWord(p) === firstWord(val))
+      const conflict = allPlayers.some(p => p && firstWord(p) === firstWord(val))
       if (conflict) {
         setPending(val)
         setInput('')
@@ -932,7 +932,7 @@ export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinne
       <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* Add late player input — always visible */}
-        <LatePlayerInput onAdd={onAddLatePlayer} allPlayers={teams.flatMap(t => t.players)} />
+        <LatePlayerInput onAdd={onAddLatePlayer} allPlayers={teams.flatMap(t => t.players ?? [])} />
 
         {/* Adjust teams button */}
         {teams.length > 0 && (
