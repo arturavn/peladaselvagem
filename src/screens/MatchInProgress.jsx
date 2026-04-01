@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { TEAM_ROLE, getInitials } from '../components/BottomNav'
+import Portal from '../components/Portal'
 
 /* ── Timer hook ─────────────────────────────────────────── */
 
@@ -158,7 +159,7 @@ function TeamSwapModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, on
     const excludeId = pickingSlot === 'a' ? selectedB : selectedA
     const available = allTeams.filter(t => t.id !== excludeId)
     return (
-      <div style={overlay} onClick={() => setPickingSlot(null)}>
+      <Portal><div style={overlay} onClick={() => setPickingSlot(null)}>
         <div style={sheet} onClick={e => e.stopPropagation()}>
           <div style={{
             padding: '16px 20px 12px',
@@ -222,13 +223,13 @@ function TeamSwapModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, on
             })}
           </div>
         </div>
-      </div>
+      </div></Portal>
     )
   }
 
   // Main view: show both slots
   return (
-    <div style={overlay} onClick={onClose}>
+    <Portal><div style={overlay} onClick={onClose}>
       <div style={sheet} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div style={{
@@ -307,7 +308,7 @@ function TeamSwapModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, on
           </button>
         </div>
       </div>
-    </div>
+    </div></Portal>
   )
 }
 
@@ -333,7 +334,7 @@ function SubModal({ teamA, teamB, onClose, onRemove }) {
 
   if (confirm) {
     return (
-      <div style={overlay}>
+      <Portal><div style={overlay}>
         <div style={sheet}>
           <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.06em', color: 'var(--text)', marginBottom: 8 }}>
             REMOVER {confirm.toUpperCase()}?
@@ -365,12 +366,12 @@ function SubModal({ teamA, teamB, onClose, onRemove }) {
             CANCELAR
           </button>
         </div>
-      </div>
+      </div></Portal>
     )
   }
 
   return (
-    <div style={overlay}>
+    <Portal><div style={overlay}>
       <div style={sheet}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -429,7 +430,7 @@ function SubModal({ teamA, teamB, onClose, onRemove }) {
           </div>
         ))}
       </div>
-    </div>
+    </div></Portal>
   )
 }
 
