@@ -78,7 +78,19 @@ function TeamBox({ team, role }) {
         alignItems: 'center',
         justifyContent: 'center',
         boxShadow: role === 'amarelo' ? '0 0 20px rgba(245,196,0,0.15)' : '0 0 12px rgba(255,255,255,0.05)',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
+        {/* Colored top line accent */}
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0,
+          height: 2,
+          background: role === 'amarelo'
+            ? 'rgba(245,196,0,0.4)'
+            : 'rgba(255,255,255,0.15)',
+          borderRadius: '0',
+        }} />
         <span style={{
           fontFamily: 'var(--font-display)',
           fontSize: 22,
@@ -306,6 +318,37 @@ export default function MatchInProgress({
       position: 'relative',
       overflow: 'hidden',
     }}>
+      {/* Football pitch background — center circle + center line */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
+      }}>
+        {/* Center line */}
+        <div style={{
+          position: 'absolute',
+          width: '100%', height: 1,
+          background: 'rgba(255,255,255,0.03)',
+          top: '50%', transform: 'translateY(-50%)',
+        }} />
+        {/* Center circle */}
+        <div style={{
+          width: 280, height: 280,
+          borderRadius: '50%',
+          border: '1px solid rgba(255,255,255,0.03)',
+          flexShrink: 0,
+        }} />
+        {/* Center spot */}
+        <div style={{
+          position: 'absolute',
+          width: 6, height: 6,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.04)',
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }} />
+      </div>
+
       {/* Top accent bar */}
       <div style={{
         position: 'absolute',
@@ -326,6 +369,8 @@ export default function MatchInProgress({
         justifyContent: 'center',
         paddingTop: 'calc(var(--safe-top) + 20px)',
         paddingBottom: 4,
+        position: 'relative',
+        zIndex: 1,
       }}>
         <div style={{
           display: 'flex',
@@ -370,6 +415,8 @@ export default function MatchInProgress({
         justifyContent: 'center',
         padding: '0 24px',
         gap: 20,
+        position: 'relative',
+        zIndex: 1,
       }}>
         {/* Team boxes */}
         <div style={{
