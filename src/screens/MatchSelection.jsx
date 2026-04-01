@@ -49,7 +49,6 @@ function TeamPickerModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, 
     borderRadius: '20px 20px 0 0',
     maxHeight: '90dvh',
     display: 'flex', flexDirection: 'column',
-    paddingBottom: 'var(--safe-bottom)',
   }
 
   const canConfirm = selectedA && selectedB && selectedA !== selectedB
@@ -186,7 +185,7 @@ function TeamPickerModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, 
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '0 20px 28px', flexShrink: 0 }}>
+        <div style={{ padding: '0 20px', paddingBottom: 'calc(20px + var(--safe-bottom))', flexShrink: 0 }}>
           <button
             onClick={() => canConfirm && onConfirm(selectedA, selectedB)}
             disabled={!canConfirm}
@@ -195,7 +194,7 @@ function TeamPickerModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, 
               background: canConfirm ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
               border: 'none', borderRadius: 'var(--radius)',
               fontFamily: 'var(--font-display)', fontSize: 18, letterSpacing: '0.1em',
-              color: canConfirm ? '#080808' : 'var(--text-3)',
+              color: canConfirm ? '#fff' : 'var(--text-3)',
               cursor: canConfirm ? 'pointer' : 'not-allowed',
             }}
           >

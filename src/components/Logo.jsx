@@ -63,17 +63,6 @@ export default function Logo({ size = 'md' }) {
         }}>
           SELVAGEM
         </div>
-        <div style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: subSize,
-          fontWeight: 700,
-          letterSpacing: '0.18em',
-          color: 'var(--text-3)',
-          textTransform: 'uppercase',
-          marginTop: 3,
-        }}>
-          Futebol de Rua
-        </div>
       </div>
     </div>
   )
