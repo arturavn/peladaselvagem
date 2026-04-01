@@ -26,12 +26,12 @@ function IconHome({ active }) {
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
       <path
         d="M3 8.5L10 2l7 6.5V17a1 1 0 01-1 1H4a1 1 0 01-1-1V8.5z"
-        stroke={active ? '#00FF87' : '#555'}
+        stroke={active ? '#FF5500' : '#555'}
         strokeWidth="1.5"
-        fill={active ? 'rgba(0,255,135,0.1)' : 'none'}
+        fill={active ? 'rgba(255,85,0,0.1)' : 'none'}
         strokeLinejoin="round"
       />
-      <path d="M7.5 18V12h5v6" stroke={active ? '#00FF87' : '#555'} strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M7.5 18V12h5v6" stroke={active ? '#FF5500' : '#555'} strokeWidth="1.5" strokeLinejoin="round"/>
     </svg>
   )
 }
@@ -39,9 +39,9 @@ function IconHome({ active }) {
 function IconDraws({ active }) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <circle cx="7" cy="7" r="3" stroke={active ? '#00FF87' : '#555'} strokeWidth="1.5"/>
-      <circle cx="14" cy="7" r="3" stroke={active ? '#00FF87' : '#555'} strokeWidth="1.5"/>
-      <path d="M2 17c0-2.76 2.24-5 5-5h6c2.76 0 5 2.24 5 5" stroke={active ? '#00FF87' : '#555'} strokeWidth="1.5" strokeLinecap="round"/>
+      <circle cx="7" cy="7" r="3" stroke={active ? '#FF5500' : '#555'} strokeWidth="1.5"/>
+      <circle cx="14" cy="7" r="3" stroke={active ? '#FF5500' : '#555'} strokeWidth="1.5"/>
+      <path d="M2 17c0-2.76 2.24-5 5-5h6c2.76 0 5 2.24 5 5" stroke={active ? '#FF5500' : '#555'} strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   )
 }
@@ -49,9 +49,9 @@ function IconDraws({ active }) {
 function IconMatch({ active }) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="8" stroke={active ? '#00FF87' : '#555'} strokeWidth="1.5"/>
+      <circle cx="10" cy="10" r="8" stroke={active ? '#FF5500' : '#555'} strokeWidth="1.5"/>
       <path d="M10 4.5l1.8 3.6 4 .58-2.9 2.83.68 3.99L10 13.3l-3.58 1.88.69-4L4.2 8.68l4-.58L10 4.5z"
-        fill={active ? '#00FF87' : '#555'} opacity={active ? 1 : 0.6}/>
+        fill={active ? '#FF5500' : '#555'} opacity={active ? 1 : 0.6}/>
     </svg>
   )
 }
@@ -59,8 +59,8 @@ function IconMatch({ active }) {
 function IconWaitlist({ active }) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <rect x="4" y="2" width="12" height="16" rx="2" stroke={active ? '#00FF87' : '#555'} strokeWidth="1.5"/>
-      <path d="M7 7h6M7 10h6M7 13h4" stroke={active ? '#00FF87' : '#555'} strokeWidth="1.4" strokeLinecap="round"/>
+      <rect x="4" y="2" width="12" height="16" rx="2" stroke={active ? '#FF5500' : '#555'} strokeWidth="1.5"/>
+      <path d="M7 7h6M7 10h6M7 13h4" stroke={active ? '#FF5500' : '#555'} strokeWidth="1.4" strokeLinecap="round"/>
     </svg>
   )
 }
