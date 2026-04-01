@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Logo from '../components/Logo'
 import { TEAM_ROLE, getInitials } from '../components/BottomNav'
+import Portal from '../components/Portal'
 
 /* ── Next match preview — PRETO vs AMARELO ─────────────── */
 
@@ -344,7 +345,7 @@ function RemovePlayerModal({ teams, teamQueue, onRemove, onClose }) {
   }
 
   return (
-    <div style={{
+    <Portal><div style={{
       position: 'fixed', inset: 0, zIndex: 200,
       background: 'rgba(0,0,0,0.85)',
       display: 'flex', flexDirection: 'column',
@@ -472,7 +473,7 @@ function RemovePlayerModal({ teams, teamQueue, onRemove, onClose }) {
           ))}
         </div>
       </div>
-    </div>
+    </div></Portal>
   )
 }
 
@@ -559,7 +560,7 @@ function AdjustTeamsModal({ teams, teamQueue, onSave, onClose }) {
   const floatingForEdit = editingId ? floating : []
 
   return (
-    <div
+    <Portal><div
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(0,0,0,0.85)',
@@ -813,7 +814,7 @@ function AdjustTeamsModal({ teams, teamQueue, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div></Portal>
   )
 }
 

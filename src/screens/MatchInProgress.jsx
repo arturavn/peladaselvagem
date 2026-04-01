@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { TEAM_ROLE, getInitials } from '../components/BottomNav'
+import Portal from '../components/Portal'
 
 /* ── Timer hook ─────────────────────────────────────────── */
 
@@ -127,6 +128,190 @@ function TeamBox({ team, role }) {
   )
 }
 
+/* ── Team Swap Modal ────────────────────────────────────── */
+
+function TeamSwapModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, onClose }) {
+  const [selectedA, setSelectedA] = useState(currentTeamAId)
+  const [selectedB, setSelectedB] = useState(currentTeamBId)
+  const [pickingSlot, setPickingSlot] = useState(null) // 'a' | 'b' | null
+
+  const getTeam = id => allTeams.find(t => t.id === id)
+  const teamA = getTeam(selectedA)
+  const teamB = getTeam(selectedB)
+
+  const overlay = {
+    position: 'fixed', inset: 0, zIndex: 100,
+    background: 'rgba(0,0,0,0.85)',
+    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+  }
+  const sheet = {
+    width: '100%', maxWidth: 390,
+    background: 'var(--surface)',
+    borderRadius: '20px 20px 0 0',
+    maxHeight: '85dvh',
+    display: 'flex', flexDirection: 'column',
+  }
+
+  const canConfirm = selectedA && selectedB && selectedA !== selectedB
+
+  // Picker list view
+  if (pickingSlot) {
+    const excludeId = pickingSlot === 'a' ? selectedB : selectedA
+    const available = allTeams.filter(t => t.id !== excludeId)
+    return (
+      <Portal><div style={overlay} onClick={() => setPickingSlot(null)}>
+        <div style={sheet} onClick={e => e.stopPropagation()}>
+          <div style={{
+            padding: '16px 20px 12px',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+          }}>
+            <button onClick={() => setPickingSlot(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 18, padding: '4px 8px 4px 0' }}>
+              ←
+            </button>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--text)' }}>
+                {pickingSlot === 'a' ? '⚫ TIME PRETO' : '🟡 TIME AMARELO'}
+              </div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>
+                Escolha o time
+              </div>
+            </div>
+          </div>
+          <div style={{ overflowY: 'auto', flex: 1 }}>
+            {available.map(team => {
+              const cap = team.captain ?? team.players?.[0] ?? '—'
+              const isSelected = (pickingSlot === 'a' ? selectedA : selectedB) === team.id
+              return (
+                <div
+                  key={team.id}
+                  onClick={() => {
+                    if (pickingSlot === 'a') setSelectedA(team.id)
+                    else setSelectedB(team.id)
+                    setPickingSlot(null)
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '14px 20px',
+                    borderBottom: '1px solid var(--border)',
+                    cursor: 'pointer',
+                    background: isSelected ? 'rgba(0,255,135,0.04)' : 'transparent',
+                  }}
+                >
+                  <div style={{
+                    width: 44, height: 44,
+                    background: 'var(--bg)', border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
+                    borderRadius: 'var(--radius-sm)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, color: isSelected ? 'var(--accent)' : 'var(--text-2)', letterSpacing: '0.04em' }}>
+                      {cap.substring(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, letterSpacing: '0.04em', color: 'var(--text)' }}>
+                      {cap.toUpperCase()}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+                      {team.players.length} jog. · {team.wins ?? 0}W
+                      {!team.complete && <span style={{ color: 'var(--warning)', marginLeft: 6 }}>incompleto</span>}
+                    </div>
+                  </div>
+                  {isSelected && <span style={{ color: 'var(--accent)', fontSize: 16 }}>✓</span>}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div></Portal>
+    )
+  }
+
+  // Main view: show both slots
+  return (
+    <Portal><div style={overlay} onClick={onClose}>
+      <div style={sheet} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{
+          padding: '20px 20px 12px',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0,
+        }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.06em', color: 'var(--text)' }}>
+              TROCAR TIMES
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+              Partida será pausada ao confirmar
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 20, padding: 4 }}>✕</button>
+        </div>
+
+        {/* Slots */}
+        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[
+            { slot: 'a', label: '⚫ TIME PRETO', team: teamA, accent: '#AAAAAA' },
+            { slot: 'b', label: '🟡 TIME AMARELO', team: teamB, accent: '#F5C400' },
+          ].map(({ slot, label, team, accent }) => {
+            const cap = team?.captain ?? team?.players?.[0] ?? '—'
+            return (
+              <div
+                key={slot}
+                onClick={() => setPickingSlot(slot)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '14px 16px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: accent, marginBottom: 3 }}>
+                    {label}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.04em', color: 'var(--text)' }}>
+                    {cap.toUpperCase()}
+                  </div>
+                  {team && (
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>
+                      {team.players.length} jog. · {team.wins ?? 0}W
+                    </div>
+                  )}
+                </div>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.08em' }}>
+                  TROCAR ›
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '0 20px 28px', flexShrink: 0 }}>
+          <button
+            onClick={() => canConfirm && onConfirm(selectedA, selectedB)}
+            disabled={!canConfirm}
+            style={{
+              width: '100%', height: 52,
+              background: canConfirm ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
+              border: 'none', borderRadius: 'var(--radius)',
+              fontFamily: 'var(--font-display)', fontSize: 18, letterSpacing: '0.1em',
+              color: canConfirm ? '#080808' : 'var(--text-3)',
+              cursor: canConfirm ? 'pointer' : 'not-allowed',
+            }}
+          >
+            CONFIRMAR TIMES
+          </button>
+        </div>
+      </div>
+    </div></Portal>
+  )
+}
+
 /* ── Substitution Modal ─────────────────────────────────── */
 
 function SubModal({ teamA, teamB, onClose, onRemove }) {
@@ -149,7 +334,7 @@ function SubModal({ teamA, teamB, onClose, onRemove }) {
 
   if (confirm) {
     return (
-      <div style={overlay}>
+      <Portal><div style={overlay}>
         <div style={sheet}>
           <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.06em', color: 'var(--text)', marginBottom: 8 }}>
             REMOVER {confirm.toUpperCase()}?
@@ -181,12 +366,12 @@ function SubModal({ teamA, teamB, onClose, onRemove }) {
             CANCELAR
           </button>
         </div>
-      </div>
+      </div></Portal>
     )
   }
 
   return (
-    <div style={overlay}>
+    <Portal><div style={overlay}>
       <div style={sheet}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -245,7 +430,7 @@ function SubModal({ teamA, teamB, onClose, onRemove }) {
           </div>
         ))}
       </div>
-    </div>
+    </div></Portal>
   )
 }
 
@@ -256,12 +441,14 @@ export default function MatchInProgress({
   duration,
   teamA,
   teamB,
+  allTeams,
   onEnd,
   isPaused,
   pausedRemaining,
   onPause,
   onResume,
   onRemoveMatchPlayer,
+  onChangeMatchTeams,
 }) {
   // activeEndTime: null when paused (freezes useTimer)
   const activeEndTime = isPaused ? null : endTime
@@ -276,6 +463,7 @@ export default function MatchInProgress({
   const progress   = totalMs > 0 ? Math.max(0, displayMs / totalMs) : 0
 
   const [showSubModal, setShowSubModal] = useState(false)
+  const [showSwapModal, setShowSwapModal] = useState(false)
 
   const handlePause  = () => onPause(remaining)
   const handleResume = () => onResume()
@@ -283,6 +471,16 @@ export default function MatchInProgress({
   const handleOpenSub = () => {
     if (!isPaused) onPause(remaining)
     setShowSubModal(true)
+  }
+
+  const handleOpenSwap = () => {
+    if (!isPaused) onPause(remaining)
+    setShowSwapModal(true)
+  }
+
+  const handleConfirmSwap = (newAId, newBId) => {
+    onChangeMatchTeams(newAId, newBId, remaining)
+    setShowSwapModal(false)
   }
 
   // Auto-end when time runs out (only when not paused)
@@ -517,6 +715,29 @@ export default function MatchInProgress({
           </div>
         </div>
 
+        {/* Trocar times */}
+        <button
+          onClick={handleOpenSwap}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            width: '100%',
+            height: 44,
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 'var(--radius)',
+            fontFamily: 'var(--font-display)',
+            fontSize: 15,
+            letterSpacing: '0.1em',
+            color: 'var(--text-3)',
+            cursor: 'pointer',
+          }}
+        >
+          ⇄ TROCAR TIMES
+        </button>
+
         {/* Substituir jogador */}
         <button
           onClick={handleOpenSub}
@@ -573,6 +794,17 @@ export default function MatchInProgress({
           teamB={teamB}
           onClose={() => setShowSubModal(false)}
           onRemove={(playerName) => onRemoveMatchPlayer(playerName, remaining)}
+        />
+      )}
+
+      {/* Team swap modal */}
+      {showSwapModal && (
+        <TeamSwapModal
+          allTeams={allTeams ?? []}
+          currentTeamAId={teamA?.id}
+          currentTeamBId={teamB?.id}
+          onConfirm={handleConfirmSwap}
+          onClose={() => setShowSwapModal(false)}
         />
       )}
 
