@@ -118,7 +118,7 @@ export default function BottomNav({ screen, hasTeams, hasHistory, activeMatch, o
     { id: 'home',     targetScreen: 'registration', label: 'HOME',     Icon: IconHome,     available: true },
     { id: 'draws',    targetScreen: 'teams',         label: 'DRAWS',    Icon: IconDraws,    available: hasTeams },
     { id: 'match',    targetScreen: matchTarget,     label: 'MATCH',    Icon: IconMatch,    available: hasTeams },
-    { id: 'waitlist', targetScreen: 'queue',          label: 'WAITLIST', Icon: IconWaitlist, available: hasHistory },
+    { id: 'waitlist', targetScreen: 'queue',          label: 'WAITLIST', Icon: IconWaitlist, available: hasTeams },
   ]
 
   return (
