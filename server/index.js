@@ -22,6 +22,14 @@ if (process.env.NODE_ENV === 'production') {
   app.get('/{*path}', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')))
 }
 
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason)
+})
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err)
+})
+
 initDb().then(() => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 }).catch(err => {
