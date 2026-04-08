@@ -2,54 +2,25 @@
 // PostgreSQL connection and state persistence
 
 import pg from 'pg'
-import dns from 'dns/promises'
+import dns from 'dns'
 import dotenv from 'dotenv'
 import { DEFAULT_STATE } from './gameLogic.js'
 
 dotenv.config()
 
+// Prefer IPv4 when both A and AAAA records exist
+dns.setDefaultResultOrder('ipv4first')
+
 const { Pool } = pg
 
 const isRemote = process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost')
 
-let pool
-
-async function buildPool() {
-  const connectionString = process.env.DATABASE_URL
-
-  if (isRemote && connectionString) {
-    try {
-      const url = new URL(connectionString)
-      const hostname = url.hostname
-      const [ipv4] = await dns.resolve4(hostname)
-      console.log(`DB host resolved to IPv4: ${ipv4}`)
-
-      // Connect via IPv4 but keep original hostname as SSL servername (SNI)
-      // so Supabase PgBouncer can identify the correct tenant
-      return new Pool({
-        host: ipv4,
-        port: Number(url.port) || 5432,
-        database: url.pathname.slice(1),
-        user: decodeURIComponent(url.username),
-        password: decodeURIComponent(url.password),
-        ssl: {
-          rejectUnauthorized: false,
-          servername: hostname,
-        },
-      })
-    } catch (e) {
-      console.warn('IPv4 resolve failed, using original hostname:', e.message)
-    }
-  }
-
-  return new Pool({
-    connectionString,
-    ssl: isRemote ? { rejectUnauthorized: false } : false,
-  })
-}
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: isRemote ? { rejectUnauthorized: false } : false,
+})
 
 export async function initDb() {
-  pool = await buildPool()
   await pool.query(`
     CREATE TABLE IF NOT EXISTS pelada_state (
       id INTEGER PRIMARY KEY DEFAULT 1,
