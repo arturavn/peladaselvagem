@@ -217,18 +217,23 @@ router.post('/actions/select-winner', async (req, res) => {
 
     // 3. Get rest = teamQueue filtered to remove both playing teams, complete first
     const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
-    const rest = [
+    let rest = [
       ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
       ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
     ]
 
-    // 4. If rest[0] exists and is incomplete, fill from loser
-    if (rest.length > 0) {
-      const nextId = rest[0]
-      const nextTeam = teams.find(t => t.id === nextId)
-      if (nextTeam && nextTeam.players.length < TEAM_SIZE) {
-        teams = fillIncompleteFromLoser(teams, nextId, loserId)
-      }
+    // 4. Fill the first incomplete waiting team from loser so it can eventually play
+    const firstIncompleteId = rest.find(id => {
+      const t = teams.find(t => t.id === id)
+      return t && t.players.length < TEAM_SIZE
+    })
+    if (firstIncompleteId) {
+      teams = fillIncompleteFromLoser(teams, firstIncompleteId, loserId)
+      // Re-sort after fill (incomplete team may now be complete)
+      rest = [
+        ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
+        ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
+      ]
     }
 
     // 5. Remove loser from queue if it has 0 players after transfer
@@ -298,18 +303,23 @@ router.post('/actions/resolve-empate', async (req, res) => {
     }
 
     const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
-    const rest = [
+    let rest = [
       ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
       ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
     ]
 
-    // If next waiting team is incomplete, fill from loser
-    if (rest.length > 0) {
-      const nextId = rest[0]
-      const nextTeam = teams.find(t => t.id === nextId)
-      if (nextTeam && nextTeam.players.length < TEAM_SIZE) {
-        teams = fillIncompleteFromLoser(teams, nextId, loserId)
-      }
+    // Fill first incomplete waiting team from loser so it can eventually play
+    const firstIncompleteId = rest.find(id => {
+      const t = teams.find(t => t.id === id)
+      return t && t.players.length < TEAM_SIZE
+    })
+    if (firstIncompleteId) {
+      teams = fillIncompleteFromLoser(teams, firstIncompleteId, loserId)
+      // Re-sort after fill (incomplete team may now be complete)
+      rest = [
+        ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
+        ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
+      ]
     }
 
     const loserAfter = teams.find(t => t.id === loserId)
@@ -603,20 +613,17 @@ router.post('/actions/add-late-player', async (req, res) => {
       ? [state.activeMatch.teamAId, state.activeMatch.teamBId]
       : []
 
-    // Find last team in queue that is NOT currently playing
+    // Find first incomplete team in waiting queue (not currently playing)
     const waitingQueueIds = state.teamQueue.filter(id => !playingIds.includes(id))
-    const lastWaitingId = waitingQueueIds.length > 0
-      ? waitingQueueIds[waitingQueueIds.length - 1]
-      : null
+    const firstIncompleteWaitingId = waitingQueueIds.find(id => {
+      const t = state.teams.find(t => t.id === id)
+      return t && t.players.length < TEAM_SIZE
+    }) ?? null
 
-    const lastWaitingTeam = lastWaitingId
-      ? state.teams.find(t => t.id === lastWaitingId)
-      : null
-
-    if (lastWaitingTeam && lastWaitingTeam.players.length < TEAM_SIZE) {
-      // Add player to the last waiting team
+    if (firstIncompleteWaitingId) {
+      // Add player to the first incomplete waiting team (closest to playing)
       state.teams = state.teams.map(t => {
-        if (t.id === lastWaitingId) {
+        if (t.id === firstIncompleteWaitingId) {
           const newPlayers = [...t.players, n]
           return {
             ...t,
