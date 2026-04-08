@@ -15,16 +15,28 @@ const isRemote = process.env.DATABASE_URL && !process.env.DATABASE_URL.includes(
 let pool
 
 async function buildPool() {
-  let connectionString = process.env.DATABASE_URL
+  const connectionString = process.env.DATABASE_URL
 
-  // Railway has no IPv6 route to Supabase — resolve hostname to IPv4 first
   if (isRemote && connectionString) {
     try {
       const url = new URL(connectionString)
-      const [ipv4] = await dns.resolve4(url.hostname)
-      url.hostname = ipv4
-      connectionString = url.toString()
+      const hostname = url.hostname
+      const [ipv4] = await dns.resolve4(hostname)
       console.log(`DB host resolved to IPv4: ${ipv4}`)
+
+      // Connect via IPv4 but keep original hostname as SSL servername (SNI)
+      // so Supabase PgBouncer can identify the correct tenant
+      return new Pool({
+        host: ipv4,
+        port: Number(url.port) || 5432,
+        database: url.pathname.slice(1),
+        user: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        ssl: {
+          rejectUnauthorized: false,
+          servername: hostname,
+        },
+      })
     } catch (e) {
       console.warn('IPv4 resolve failed, using original hostname:', e.message)
     }
