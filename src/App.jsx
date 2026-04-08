@@ -126,9 +126,15 @@ export default function App() {
     setState(data.state)
   }, [])
 
-  /* Resolve empate */
+  /* Resolve empate — coin toss */
   const resolveEmpate = useCallback(async (coinTossWinnerId) => {
     const data = await api.resolveEmpate(coinTossWinnerId)
+    setState(data.state)
+  }, [])
+
+  /* Resolve empate — swap (both teams out, next 2 complete in) */
+  const resolveEmpateSwap = useCallback(async () => {
+    const data = await api.resolveEmpateSwap()
     setState(data.state)
   }, [])
 
@@ -375,6 +381,8 @@ export default function App() {
           teamB={matchTeamB}
           onSelect={selectWinner}
           onEmpate={resolveEmpate}
+          onEmpateSwap={resolveEmpateSwap}
+          waitingCompleteCount={waitingTeams.filter(t => t.complete).length}
         />
       )}
     </div>

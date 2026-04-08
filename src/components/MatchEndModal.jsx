@@ -147,14 +147,21 @@ function WinnerBtn({ role, team, isSelected, onClick }) {
 
 /* ── Main component ──────────────────────────────────────── */
 
-export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
+export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpateSwap, waitingCompleteCount = 0 }) {
   const [selected, setSelected] = useState(null)
   const [confirming, setConfirming] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
-  const [empateMode, setEmpateMode] = useState(false)
+  const [empateMode, setEmpateMode] = useState(false)   // coin toss mode
+  const [empateSwapMode, setEmpateSwapMode] = useState(false) // both out mode
 
   const handleConfirm = async () => {
-    if (!selected || confirming) return
+    if (confirming) return
+    if (empateSwapMode) {
+      setConfirming(true)
+      try { await onEmpateSwap() } catch (e) { console.error(e); setConfirming(false) }
+      return
+    }
+    if (!selected) return
     setConfirming(true)
     try {
       if (empateMode) {
@@ -173,7 +180,11 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
 
   const handleEmpate = () => {
     setSelected(null)
-    setEmpateMode(true)
+    if (waitingCompleteCount >= 2) {
+      setEmpateSwapMode(true)
+    } else {
+      setEmpateMode(true)
+    }
   }
 
   return (
@@ -193,7 +204,7 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
       }}>
         <div style={{
           background: '#0E0E0E',
-          borderTop: `1px solid ${empateMode ? 'rgba(255,149,0,0.3)' : 'rgba(255,85,0,0.2)'}`,
+          borderTop: `1px solid ${(empateMode || empateSwapMode) ? 'rgba(255,149,0,0.3)' : 'rgba(255,85,0,0.2)'}`,
           borderRadius: '16px 16px 0 0',
           padding: '28px 24px',
           paddingBottom: 'calc(28px + 60px + var(--safe-bottom))',
@@ -204,8 +215,47 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
           {/* Decorative background rects */}
           <DecoRects />
 
+          {/* ── Empate swap mode header ── */}
+          {empateSwapMode && (
+            <div style={{ marginBottom: 24, position: 'relative' }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 12px',
+                background: 'rgba(255,149,0,0.1)',
+                border: '1px solid rgba(255,149,0,0.3)',
+                borderRadius: 20, marginBottom: 12,
+              }}>
+                <div style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: 'var(--warning)',
+                  boxShadow: '0 0 6px var(--warning)',
+                }} />
+                <span style={{
+                  fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700,
+                  letterSpacing: '0.14em', color: 'var(--warning)', textTransform: 'uppercase',
+                }}>
+                  EMPATE TÉCNICO
+                </span>
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-display)', fontSize: 34,
+                letterSpacing: '0.04em', lineHeight: 1, color: '#F0F0F0', marginBottom: 8,
+              }}>
+                OS DOIS TIMES<br />
+                <span style={{ color: 'var(--warning)' }}>SAEM DA FILA</span>
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-body)', fontSize: 11,
+                color: 'var(--text-3)', fontWeight: 500, lineHeight: 1.5,
+              }}>
+                Há {waitingCompleteCount} {waitingCompleteCount === 1 ? 'time completo' : 'times completos'} esperando.
+                Os próximos dois times da fila entram em campo.
+              </div>
+            </div>
+          )}
+
           {/* ── Normal mode header ── */}
-          {!empateMode && (
+          {!empateMode && !empateSwapMode && (
             <div style={{ marginBottom: 24, position: 'relative' }}>
               <div style={{
                 fontFamily: 'var(--font-body)',
@@ -290,28 +340,30 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
             </div>
           )}
 
-          {/* Team buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, position: 'relative' }}>
-            {teamA && (
-              <WinnerBtn
-                role="preto"
-                team={teamA}
-                isSelected={selected?.id === teamA.id}
-                onClick={() => !confirming && setSelected(teamA)}
-              />
-            )}
-            {teamB && (
-              <WinnerBtn
-                role="amarelo"
-                team={teamB}
-                isSelected={selected?.id === teamB.id}
-                onClick={() => !confirming && setSelected(teamB)}
-              />
-            )}
-          </div>
+          {/* Team buttons — hidden in swap mode */}
+          {!empateSwapMode && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, position: 'relative' }}>
+              {teamA && (
+                <WinnerBtn
+                  role="preto"
+                  team={teamA}
+                  isSelected={selected?.id === teamA.id}
+                  onClick={() => !confirming && setSelected(teamA)}
+                />
+              )}
+              {teamB && (
+                <WinnerBtn
+                  role="amarelo"
+                  team={teamB}
+                  isSelected={selected?.id === teamB.id}
+                  onClick={() => !confirming && setSelected(teamB)}
+                />
+              )}
+            </div>
+          )}
 
           {/* Empate button — only in normal mode */}
-          {!empateMode && (
+          {!empateMode && !empateSwapMode && (
             <button
               onClick={handleEmpate}
               style={{
@@ -335,29 +387,29 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
             </button>
           )}
 
-          {/* Spacing in empate mode */}
-          {empateMode && <div style={{ height: 14 }} />}
+          {/* Spacing in empate/swap mode */}
+          {(empateMode || empateSwapMode) && <div style={{ height: empateSwapMode ? 24 : 14 }} />}
 
           {/* Confirm button */}
           <button
             onClick={handleConfirm}
-            disabled={!selected || confirming}
+            disabled={(!empateSwapMode && !selected) || confirming}
             style={{
               width: '100%',
               height: 54,
-              background: selected && !confirming
-                ? empateMode ? 'var(--warning)' : 'var(--accent)'
+              background: (empateSwapMode || selected) && !confirming
+                ? 'var(--warning)'
                 : 'rgba(255,255,255,0.06)',
               border: 'none',
               borderRadius: 'var(--radius)',
               fontFamily: 'var(--font-display)',
               fontSize: 19,
               letterSpacing: '0.1em',
-              color: selected && !confirming ? '#080808' : 'var(--text-3)',
-              cursor: selected && !confirming ? 'pointer' : 'not-allowed',
+              color: (empateSwapMode || selected) && !confirming ? '#080808' : 'var(--text-3)',
+              cursor: (empateSwapMode || selected) && !confirming ? 'pointer' : 'not-allowed',
               transition: 'all 0.2s ease',
-              boxShadow: selected && !confirming
-                ? empateMode ? '0 0 12px rgba(255,149,0,0.35)' : 'var(--glow-sm)'
+              boxShadow: (empateSwapMode || selected) && !confirming
+                ? '0 0 12px rgba(255,149,0,0.35)'
                 : 'none',
               position: 'relative',
             }}
@@ -366,6 +418,7 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
               ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <span className="loading-ball">⚽</span> CONFIRMANDO…
                 </span>
+              : empateSwapMode ? 'CONFIRMAR — TROCAR TIMES'
               : empateMode ? 'CONFIRMAR SORTEIO' : 'CONFIRMAR VENCEDOR'
             }
           </button>
@@ -394,7 +447,7 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
               fontSize: 9,
               fontWeight: 600,
               letterSpacing: '0.1em',
-              color: empateMode ? 'rgba(255,149,0,0.4)' : 'rgba(255,85,0,0.4)',
+              color: (empateMode || empateSwapMode) ? 'rgba(255,149,0,0.4)' : 'rgba(255,85,0,0.4)',
               transition: 'color 0.3s ease',
             }}>
               TACTICAL INTERFACE V2.0

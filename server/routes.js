@@ -215,8 +215,12 @@ router.post('/actions/select-winner', async (req, res) => {
       }
     }
 
-    // 3. Get rest = teamQueue filtered to remove both playing teams
-    const rest = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
+    // 3. Get rest = teamQueue filtered to remove both playing teams, complete first
+    const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
+    const rest = [
+      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
+      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
+    ]
 
     // 4. If rest[0] exists and is incomplete, fill from loser
     if (rest.length > 0) {
@@ -293,7 +297,11 @@ router.post('/actions/resolve-empate', async (req, res) => {
       }
     }
 
-    const rest = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
+    const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
+    const rest = [
+      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
+      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
+    ]
 
     // If next waiting team is incomplete, fill from loser
     if (rest.length > 0) {
@@ -330,6 +338,65 @@ router.post('/actions/resolve-empate', async (req, res) => {
     res.json({ state })
   } catch (e) {
     console.error('POST /actions/resolve-empate error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+/* ── POST /api/actions/resolve-empate-swap ─────────────── */
+// Called when empate AND 2+ complete teams are waiting:
+// both playing teams leave, next 2 complete teams enter.
+router.post('/actions/resolve-empate-swap', async (req, res) => {
+  try {
+    const state = await getState()
+    const { teamAId, teamBId } = state.activeMatch
+
+    let teams = [...state.teams]
+
+    // Return all subs to their original teams
+    const subs = state.activeMatch.substitutions ?? []
+    for (const sub of subs) {
+      teams = teams.map(t => {
+        if (t.id === sub.toTeamId) {
+          const players = t.players.filter(p => p !== sub.player)
+          return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
+        }
+        if (t.id === sub.fromTeamId) {
+          const players = [...t.players, sub.player]
+          return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
+        }
+        return t
+      })
+    }
+
+    // Waiting teams sorted: complete first, incomplete last
+    const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
+    const rest = [
+      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
+      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
+    ]
+
+    const teamAAfter = teams.find(t => t.id === teamAId)
+    const teamBAfter = teams.find(t => t.id === teamBId)
+
+    // Both playing teams go to back; waiting teams come to front
+    const newQueue = [
+      ...rest,
+      ...(teamAAfter?.players?.length > 0 ? [teamAId] : []),
+      ...(teamBAfter?.players?.length > 0 ? [teamBId] : []),
+    ]
+
+    state.teams = teams
+    state.teamQueue = newQueue
+    state.activeMatch = null
+    state.showEndModal = false
+    state.lastWinnerId = null
+    state.screen = 'queue'
+    state.navDir = 'forward'
+
+    await saveState(state)
+    res.json({ state })
+  } catch (e) {
+    console.error('POST /actions/resolve-empate-swap error:', e)
     res.status(500).json({ error: e.message })
   }
 })
