@@ -8,8 +8,15 @@ import { DEFAULT_STATE } from './gameLogic.js'
 
 dotenv.config()
 
-// Force Node.js DNS to prefer IPv4 — fixes ENETUNREACH on IPv6-only hosts
-dns.setDefaultResultOrder('ipv4first')
+// Force IPv4 for all DNS lookups — Railway has no IPv6 route to Supabase
+const _lookup = dns.lookup.bind(dns)
+dns.lookup = (hostname, options, callback) => {
+  if (typeof options === 'function') {
+    _lookup(hostname, { family: 4 }, options)
+  } else {
+    _lookup(hostname, { ...options, family: 4 }, callback)
+  }
+}
 
 const { Pool } = pg
 
