@@ -7,7 +7,7 @@
     "dev:server": "node --watch server/index.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:server\"",
     "build": "vite build",
-    "start": "NODE_ENV=production node server/index.js",
+    "start": "NODE_ENV=production node --dns-result-order=ipv4first server/index.js",
     "preview": "vite preview"
   },
   "dependencies": {
