@@ -2,36 +2,42 @@
 // PostgreSQL connection and state persistence
 
 import pg from 'pg'
-import dns from 'dns'
+import dns from 'dns/promises'
 import dotenv from 'dotenv'
 import { DEFAULT_STATE } from './gameLogic.js'
 
 dotenv.config()
 
-// Force IPv4 for all DNS lookups — Railway has no IPv6 route to Supabase
-const _lookup = dns.lookup.bind(dns)
-dns.lookup = (hostname, options, callback) => {
-  if (typeof options === 'function') {
-    _lookup(hostname, { family: 4 }, options)
-  } else {
-    _lookup(hostname, { ...options, family: 4 }, callback)
-  }
-}
-
 const { Pool } = pg
 
 const isRemote = process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost')
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: isRemote ? { rejectUnauthorized: false } : false,
-})
+let pool
 
-export async function query(text, params) {
-  return pool.query(text, params)
+async function buildPool() {
+  let connectionString = process.env.DATABASE_URL
+
+  // Railway has no IPv6 route to Supabase — resolve hostname to IPv4 first
+  if (isRemote && connectionString) {
+    try {
+      const url = new URL(connectionString)
+      const [ipv4] = await dns.resolve4(url.hostname)
+      url.hostname = ipv4
+      connectionString = url.toString()
+      console.log(`DB host resolved to IPv4: ${ipv4}`)
+    } catch (e) {
+      console.warn('IPv4 resolve failed, using original hostname:', e.message)
+    }
+  }
+
+  return new Pool({
+    connectionString,
+    ssl: isRemote ? { rejectUnauthorized: false } : false,
+  })
 }
 
 export async function initDb() {
+  pool = await buildPool()
   await pool.query(`
     CREATE TABLE IF NOT EXISTS pelada_state (
       id INTEGER PRIMARY KEY DEFAULT 1,
@@ -49,7 +55,6 @@ export async function getState() {
     return { ...DEFAULT_STATE }
   }
   const stored = result.rows[0].state
-  // Merge with DEFAULT_STATE so any new keys are always present
   return { ...DEFAULT_STATE, ...stored }
 }
 
