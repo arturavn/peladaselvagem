@@ -28,6 +28,60 @@ function formatTime(ms) {
   return { min: String(m).padStart(2, '0'), sec: String(s).padStart(2, '0') }
 }
 
+/* ── Referee whistle synthesis ──────────────────────────── */
+
+function playWhistle() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext
+    if (!Ctx) return
+    const ctx = new Ctx()
+
+    // 3 short blasts then 1 long blast — classic referee end-of-match
+    const blasts = [
+      { start: 0,    dur: 0.22 },
+      { start: 0.40, dur: 0.22 },
+      { start: 0.80, dur: 0.22 },
+      { start: 1.22, dur: 0.85 },
+    ]
+
+    blasts.forEach(({ start, dur }) => {
+      const t = ctx.currentTime + start
+
+      // Two slightly detuned oscillators (Fox 40 dual-chamber effect)
+      ;[2750, 2950].forEach((freq, i) => {
+        const osc  = ctx.createOscillator()
+        const gain = ctx.createGain()
+
+        // LFO for the "pea" wobble
+        const lfo     = ctx.createOscillator()
+        const lfoGain = ctx.createGain()
+        lfo.type          = 'sine'
+        lfo.frequency.value = 18
+        lfoGain.gain.value  = 55
+        lfo.connect(lfoGain)
+        lfoGain.connect(osc.frequency)
+
+        osc.type = 'sine'
+        osc.frequency.value = freq
+
+        // Attack / sustain / release envelope
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(i === 0 ? 0.45 : 0.30, t + 0.018)
+        gain.gain.setValueAtTime(i === 0 ? 0.45 : 0.30, t + dur - 0.04)
+        gain.gain.linearRampToValueAtTime(0, t + dur)
+
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+
+        lfo.start(t);  lfo.stop(t + dur)
+        osc.start(t);  osc.stop(t + dur)
+      })
+    })
+
+    setTimeout(() => ctx.close(), 4000)
+  } catch (_) { /* silently ignore — audio not critical */ }
+}
+
 /* ── Icons ─────────────────────────────────────────────── */
 
 function IconStop() {
@@ -492,6 +546,7 @@ export default function MatchInProgress({
   useEffect(() => {
     if (isFinished && !autoEnded) {
       setAutoEnded(true)
+      playWhistle()
       onEnd()
     }
   }, [isFinished, autoEnded, onEnd])
