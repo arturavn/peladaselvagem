@@ -369,8 +369,20 @@ function TeamSwapModal({ allTeams, currentTeamAId, currentTeamBId, onConfirm, on
 
 /* ── Substitution Modal ─────────────────────────────────── */
 
-function SubModal({ teamA, teamB, onClose, onRemove }) {
+function SubModal({ teamA, teamB, allTeams = [], teamQueue = [], onClose, onRemove }) {
   const [confirm, setConfirm] = useState(null)
+
+  // Find the next player who would substitute in (mirrors server logic)
+  const playingIds = new Set([teamA?.id, teamB?.id].filter(Boolean))
+  const waitingIds = teamQueue.filter(id => !playingIds.has(id))
+  let nextSubName = null
+  for (let i = waitingIds.length - 1; i >= 0; i--) {
+    const donor = allTeams.find(t => t.id === waitingIds[i])
+    if (donor && donor.players.length > 0) {
+      nextSubName = donor.players[donor.players.length - 1]
+      break
+    }
+  }
 
   const overlay = {
     position: 'fixed', inset: 0, zIndex: 300,
@@ -394,8 +406,22 @@ function SubModal({ teamA, teamB, onClose, onRemove }) {
           <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.06em', color: 'var(--text)', marginBottom: 6 }}>
             SUBSTITUIR {confirm.toUpperCase()}
           </p>
+          <div style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 'var(--radius)',
+            padding: '10px 14px',
+            marginBottom: 20,
+          }}>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: 'var(--text-3)', marginBottom: 4 }}>
+              ENTRA NO LUGAR
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.05em', color: nextSubName ? 'var(--accent)' : 'var(--text-3)' }}>
+              {nextSubName ? nextSubName.toUpperCase() : 'NENHUM NA FILA'}
+            </div>
+          </div>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-3)', marginBottom: 20 }}>
-            O próximo da fila entra no lugar. E esse jogador?
+            E o jogador substituído?
           </p>
 
           {/* Continua jogando */}
@@ -523,6 +549,7 @@ export default function MatchInProgress({
   teamA,
   teamB,
   allTeams,
+  teamQueue,
   onEnd,
   isPaused,
   pausedRemaining,
@@ -877,6 +904,8 @@ export default function MatchInProgress({
         <SubModal
           teamA={teamA}
           teamB={teamB}
+          allTeams={allTeams}
+          teamQueue={teamQueue}
           onClose={() => setShowSubModal(false)}
           onRemove={(playerName, continues) => onRemoveMatchPlayer(playerName, remaining, continues)}
         />

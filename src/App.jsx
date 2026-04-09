@@ -343,6 +343,8 @@ export default function App() {
             pausedRemaining={state.activeMatch.pausedRemaining}
             teamA={matchTeamA}
             teamB={matchTeamB}
+            allTeams={state.teams}
+            teamQueue={state.teamQueue}
             onEnd={endMatch}
             onPause={pauseMatch}
             onResume={resumeMatch}
