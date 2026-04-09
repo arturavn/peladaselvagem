@@ -437,14 +437,14 @@ router.post('/actions/remove-match-player', async (req, res) => {
       return { ...t, players: newPlayers, captain: newPlayers[0] ?? null, complete: newPlayers.length >= TEAM_SIZE }
     })
 
-    // Find next player from last waiting team (not currently playing)
+    // Find next player from first waiting team (not currently playing)
     const waitingIds = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
     let substitution = null
 
-    for (let i = waitingIds.length - 1; i >= 0; i--) {
+    for (let i = 0; i < waitingIds.length; i++) {
       const donor = state.teams.find(t => t.id === waitingIds[i])
       if (donor && donor.players.length > 0) {
-        const subPlayer = donor.players[donor.players.length - 1]
+        const subPlayer = donor.players[0]
         const donorNewPlayers = donor.players.filter(p => p !== subPlayer)
 
         // Remove sub from donor team

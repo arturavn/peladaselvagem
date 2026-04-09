@@ -376,10 +376,10 @@ function SubModal({ teamA, teamB, allTeams = [], teamQueue = [], onClose, onRemo
   const playingIds = new Set([teamA?.id, teamB?.id].filter(Boolean))
   const waitingIds = teamQueue.filter(id => !playingIds.has(id))
   let nextSubName = null
-  for (let i = waitingIds.length - 1; i >= 0; i--) {
+  for (let i = 0; i < waitingIds.length; i++) {
     const donor = allTeams.find(t => t.id === waitingIds[i])
     if (donor && donor.players.length > 0) {
-      nextSubName = donor.players[donor.players.length - 1]
+      nextSubName = donor.players[0]
       break
     }
   }
