@@ -416,7 +416,7 @@ router.post('/actions/resolve-empate-swap', async (req, res) => {
 /* ── POST /api/actions/remove-match-player ─────────────── */
 router.post('/actions/remove-match-player', async (req, res) => {
   try {
-    const { playerName, remaining } = req.body
+    const { playerName, remaining, continues } = req.body
     if (!playerName) return res.status(400).json({ error: 'playerName required' })
 
     const state = await getState()
@@ -470,6 +470,42 @@ router.post('/actions/remove-match-player', async (req, res) => {
         substitution = { player: subPlayer, fromTeamId: donor.id, toTeamId: playerTeam.id }
         break
       }
+    }
+
+    // If player continues, add them back to the first incomplete waiting team (or new team)
+    if (continues) {
+      const playingIds = [teamAId, teamBId]
+      const waitingQueueIds = state.teamQueue.filter(id => !playingIds.includes(id))
+      const firstIncompleteId = waitingQueueIds.find(id => {
+        const t = state.teams.find(t => t.id === id)
+        return t && t.players.length < TEAM_SIZE
+      }) ?? null
+
+      if (firstIncompleteId) {
+        state.teams = state.teams.map(t => {
+          if (t.id !== firstIncompleteId) return t
+          const players = [...t.players, playerName]
+          return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
+        })
+      } else {
+        // Create new team at the end
+        const newIdx = state.teams.length
+        const newTeam = {
+          id: `team-${newIdx}`,
+          emoji: TEAM_EMOJIS[newIdx] ?? '⚽',
+          players: [playerName],
+          captain: playerName,
+          complete: false,
+          wins: 0,
+        }
+        state.teams = [...state.teams, newTeam]
+        state.teamQueue = [...state.teamQueue, newTeam.id]
+      }
+
+      // Re-sort queue: complete first, incomplete last (preserve playing teams at front)
+      const complete   = state.teamQueue.filter(id => { const t = state.teams.find(t => t.id === id); return t && t.complete })
+      const incomplete = state.teamQueue.filter(id => { const t = state.teams.find(t => t.id === id); return t && !t.complete })
+      state.teamQueue = [...complete, ...incomplete]
     }
 
     // Pause timer

@@ -155,9 +155,9 @@ export default function App() {
   }, [])
 
   /* Remove player from active match (substitution) */
-  const removeMatchPlayer = useCallback(async (playerName, remaining) => {
+  const removeMatchPlayer = useCallback(async (playerName, remaining, continues) => {
     try {
-      const data = await api.removeMatchPlayer(playerName, remaining)
+      const data = await api.removeMatchPlayer(playerName, remaining, continues)
       setState(data.state)
     } catch (e) { console.error('removeMatchPlayer error:', e) }
   }, [])

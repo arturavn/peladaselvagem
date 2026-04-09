@@ -391,31 +391,57 @@ function SubModal({ teamA, teamB, onClose, onRemove }) {
     return (
       <Portal><div style={overlay}>
         <div style={sheet}>
-          <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.06em', color: 'var(--text)', marginBottom: 8 }}>
-            REMOVER {confirm.toUpperCase()}?
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.06em', color: 'var(--text)', marginBottom: 6 }}>
+            SUBSTITUIR {confirm.toUpperCase()}
           </p>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-3)', marginBottom: 24 }}>
-            Ele sai da partida mas permanece na lista de exportação. O sistema chama o próximo da fila para substituir.
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-3)', marginBottom: 20 }}>
+            O próximo da fila entra no lugar. E esse jogador?
           </p>
+
+          {/* Continua jogando */}
           <button
-            onClick={() => { onRemove(confirm); setConfirm(null); onClose() }}
+            onClick={() => { onRemove(confirm, true); setConfirm(null); onClose() }}
             style={{
-              width: '100%', height: 52, marginBottom: 10,
-              background: 'var(--danger)', border: 'none',
+              width: '100%', height: 56, marginBottom: 10,
+              background: 'rgba(80,200,120,0.12)',
+              border: '1px solid rgba(80,200,120,0.35)',
               borderRadius: 'var(--radius)', fontFamily: 'var(--font-display)',
-              fontSize: 18, letterSpacing: '0.1em', color: '#fff', cursor: 'pointer',
+              fontSize: 17, letterSpacing: '0.08em', color: '#5DC880', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
             }}
           >
-            SIM, REMOVER
+            <span>VAI CONTINUAR</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', color: 'rgba(93,200,128,0.6)' }}>
+              VOLTA PRO FINAL DA FILA
+            </span>
           </button>
+
+          {/* Vai embora */}
+          <button
+            onClick={() => { onRemove(confirm, false); setConfirm(null); onClose() }}
+            style={{
+              width: '100%', height: 56, marginBottom: 10,
+              background: 'rgba(255,59,59,0.1)',
+              border: '1px solid rgba(255,59,59,0.3)',
+              borderRadius: 'var(--radius)', fontFamily: 'var(--font-display)',
+              fontSize: 17, letterSpacing: '0.08em', color: 'var(--danger)', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+            }}
+          >
+            <span>VAI EMBORA</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', color: 'rgba(255,59,59,0.5)' }}>
+              REMOVE DA FILA
+            </span>
+          </button>
+
           <button
             onClick={() => setConfirm(null)}
             style={{
-              width: '100%', height: 48,
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              width: '100%', height: 44,
+              background: 'transparent',
+              border: 'none',
               borderRadius: 'var(--radius)', fontFamily: 'var(--font-display)',
-              fontSize: 16, letterSpacing: '0.1em', color: 'var(--text-2)', cursor: 'pointer',
+              fontSize: 14, letterSpacing: '0.1em', color: 'var(--text-3)', cursor: 'pointer',
             }}
           >
             CANCELAR
@@ -852,7 +878,7 @@ export default function MatchInProgress({
           teamA={teamA}
           teamB={teamB}
           onClose={() => setShowSubModal(false)}
-          onRemove={(playerName) => onRemoveMatchPlayer(playerName, remaining)}
+          onRemove={(playerName, continues) => onRemoveMatchPlayer(playerName, remaining, continues)}
         />
       )}
 
