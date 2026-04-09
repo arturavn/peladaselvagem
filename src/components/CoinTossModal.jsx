@@ -223,8 +223,8 @@ export default function CoinTossModal({ teamA, teamB, onResult, onCancel }) {
                 width: '100%',
               }}>
                 {[
-                  { team: winnerTeam, label: 'VENCEDOR', color: 'rgba(255,200,0,0.15)', border: 'rgba(255,200,0,0.4)', textColor: '#FFD700', badge: '🏆 1º NA FILA' },
-                  { team: loserTeam,  label: 'PERDEDOR',  color: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', textColor: 'var(--text-3)', badge: '2º NA FILA' },
+                  { team: winnerTeam, label: 'VENCEDOR', color: 'rgba(255,200,0,0.15)', border: 'rgba(255,200,0,0.4)', textColor: '#FFD700', badge: '🏆 ENTRA ANTES' },
+                  { team: loserTeam,  label: 'PERDEDOR',  color: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', textColor: 'var(--text-3)', badge: 'ENTRA DEPOIS' },
                 ].map(({ team, label, color, border, textColor, badge }) => (
                   <div key={label} style={{
                     flex: 1,
