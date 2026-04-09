@@ -354,9 +354,10 @@ router.post('/actions/resolve-empate', async (req, res) => {
 
 /* ── POST /api/actions/resolve-empate-swap ─────────────── */
 // Called when empate AND 2+ complete teams are waiting:
-// both playing teams leave, next 2 complete teams enter.
+// both playing teams leave, coin-toss winner gets queue priority.
 router.post('/actions/resolve-empate-swap', async (req, res) => {
   try {
+    const { priorityTeamId } = req.body
     const state = await getState()
     const { teamAId, teamBId } = state.activeMatch
 
@@ -385,14 +386,15 @@ router.post('/actions/resolve-empate-swap', async (req, res) => {
       ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
     ]
 
-    const teamAAfter = teams.find(t => t.id === teamAId)
-    const teamBAfter = teams.find(t => t.id === teamBId)
+    // Coin-toss winner gets queue priority over the loser
+    const otherId = priorityTeamId === teamAId ? teamBId : teamAId
+    const priorityAfter = teams.find(t => t.id === priorityTeamId)
+    const otherAfter    = teams.find(t => t.id === otherId)
 
-    // Both playing teams go to back; waiting teams come to front
     const newQueue = [
       ...rest,
-      ...(teamAAfter?.players?.length > 0 ? [teamAId] : []),
-      ...(teamBAfter?.players?.length > 0 ? [teamBId] : []),
+      ...(priorityAfter?.players?.length > 0 ? [priorityTeamId] : []),
+      ...(otherAfter?.players?.length > 0    ? [otherId]         : []),
     ]
 
     state.teams = teams

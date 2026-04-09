@@ -132,9 +132,9 @@ export default function App() {
     setState(data.state)
   }, [])
 
-  /* Resolve empate — swap (both teams out, next 2 complete in) */
-  const resolveEmpateSwap = useCallback(async () => {
-    const data = await api.resolveEmpateSwap()
+  /* Resolve empate — swap (both teams out, coin-toss winner gets priority) */
+  const resolveEmpateSwap = useCallback(async (priorityTeamId) => {
+    const data = await api.resolveEmpateSwap(priorityTeamId)
     setState(data.state)
   }, [])
 

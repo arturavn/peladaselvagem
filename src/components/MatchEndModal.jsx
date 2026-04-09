@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Confetti from './Confetti'
 import { TEAM_ROLE, getInitials } from './BottomNav'
 import ConfirmActionModal from './ConfirmActionModal'
+import CoinTossModal from './CoinTossModal'
 
 /* ── Decorative confetti rectangles (background) ─────────── */
 
@@ -152,18 +153,14 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
   const [selected, setSelected] = useState(null)
   const [confirming, setConfirming] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
-  const [empateMode, setEmpateMode] = useState(false)   // coin toss mode
-  const [empateSwapMode, setEmpateSwapMode] = useState(false) // both out mode
-  const [pendingConfirm, setPendingConfirm] = useState(false) // confirmation overlay
+  const [empateMode, setEmpateMode] = useState(false)      // coin toss (< 2 waiting)
+  const [empateSwapMode, setEmpateSwapMode] = useState(false) // swap (2+ waiting)
+  const [pendingConfirm, setPendingConfirm] = useState(false) // winner confirm overlay
+  const [showCoinToss, setShowCoinToss] = useState(false)    // coin toss modal
 
   const executeConfirm = async () => {
     setPendingConfirm(false)
     if (confirming) return
-    if (empateSwapMode) {
-      setConfirming(true)
-      try { await onEmpateSwap() } catch (e) { console.error(e); setConfirming(false) }
-      return
-    }
     if (!selected) return
     setConfirming(true)
     try {
@@ -181,9 +178,18 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
     }
   }
 
+  const handleCoinResult = async (priorityTeamId) => {
+    setShowCoinToss(false)
+    setConfirming(true)
+    try { await onEmpateSwap(priorityTeamId) }
+    catch (e) { console.error(e); setConfirming(false) }
+  }
+
   const handleConfirm = () => {
     if (confirming) return
-    if (!empateSwapMode && !selected) return
+    // Swap mode → open coin toss modal
+    if (empateSwapMode) { setShowCoinToss(true); return }
+    if (!selected) return
     setPendingConfirm(true)
   }
 
@@ -468,12 +474,20 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
       {pendingConfirm && (
         <ConfirmActionModal
           message={
-            empateSwapMode ? 'TROCAR OS TIMES?' :
-            empateMode     ? `SORTEIO: ${selected?.captain?.toUpperCase()}?` :
-                             `VENCEDOR: ${selected?.captain?.toUpperCase()}?`
+            empateMode ? `SORTEIO: ${selected?.captain?.toUpperCase()}?`
+                       : `VENCEDOR: ${selected?.captain?.toUpperCase()}?`
           }
           onConfirm={executeConfirm}
           onCancel={() => setPendingConfirm(false)}
+        />
+      )}
+
+      {showCoinToss && (
+        <CoinTossModal
+          teamA={teamA}
+          teamB={teamB}
+          onResult={handleCoinResult}
+          onCancel={() => setShowCoinToss(false)}
         />
       )}
     </>
