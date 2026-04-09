@@ -384,7 +384,7 @@ export default function App() {
           onSelect={selectWinner}
           onEmpate={resolveEmpate}
           onEmpateSwap={resolveEmpateSwap}
-          waitingCompleteCount={waitingTeams.length}
+          waitingCompleteCount={waitingTeams.filter(t => t?.complete).length}
         />
       )}
     </div>
