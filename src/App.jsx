@@ -239,6 +239,14 @@ export default function App() {
     .map(getTeam)
     .filter(Boolean)
 
+  // Count waiting teams that are (or will be) complete after sub returns
+  // Substitutions temporarily deplete waiting teams; players are returned on select-winner
+  const pendingSubs = state.activeMatch?.substitutions ?? []
+  const waitingCompleteCount = waitingTeams.filter(t => {
+    const returned = pendingSubs.filter(s => s.fromTeamId === t.id).length
+    return (t.players.length + returned) >= 5
+  }).length
+
   /* Active match teams for passing to screens */
   const matchTeamA = state.activeMatch ? getTeam(state.activeMatch.teamAId) : null
   const matchTeamB = state.activeMatch ? getTeam(state.activeMatch.teamBId) : null
@@ -384,7 +392,7 @@ export default function App() {
           onSelect={selectWinner}
           onEmpate={resolveEmpate}
           onEmpateSwap={resolveEmpateSwap}
-          waitingCompleteCount={waitingTeams.filter(t => t?.complete).length}
+          waitingCompleteCount={waitingCompleteCount}
         />
       )}
     </div>
