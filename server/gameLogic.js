@@ -56,6 +56,46 @@ export function buildTeamsManual(teamsData) {
   }))
 }
 
+/* Consolidate fragmented incomplete waiting teams into complete ones.
+   Pools all players from incomplete waiting teams and redistributes
+   them in queue order: fill teams of TEAM_SIZE first, leftover in last. */
+export function consolidateWaitingTeams(teams, teamQueue, playingIds) {
+  const waitingIds = teamQueue.filter(id => !playingIds.includes(id))
+  const incompleteIds = waitingIds.filter(id => {
+    const t = teams.find(t => t.id === id)
+    return t && t.players.length > 0 && t.players.length < TEAM_SIZE
+  })
+  if (incompleteIds.length < 2) return { teams, teamQueue }
+
+  // Pool all players from incomplete waiting teams
+  const pool = incompleteIds.flatMap(id => teams.find(t => t.id === id)?.players ?? [])
+
+  // Clear those teams first
+  teams = teams.map(t =>
+    incompleteIds.includes(t.id) ? { ...t, players: [], captain: null, complete: false } : t
+  )
+
+  // Redistribute in queue order: fill TEAM_SIZE each, remainder stays in last
+  let remaining = [...pool]
+  for (const id of incompleteIds) {
+    if (!remaining.length) break
+    const players = remaining.splice(0, TEAM_SIZE)
+    teams = teams.map(t => t.id !== id ? t : {
+      ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE,
+    })
+  }
+
+  // Remove teams that ended up empty
+  const emptyIds = new Set(incompleteIds.filter(id => {
+    const t = teams.find(t => t.id === id)
+    return !t || t.players.length === 0
+  }))
+  teams = teams.filter(t => !emptyIds.has(t.id))
+  teamQueue = teamQueue.filter(id => !emptyIds.has(id))
+
+  return { teams, teamQueue }
+}
+
 /* Transfer players from loser team to fill an incomplete waiting team */
 export function fillIncompleteFromLoser(teams, targetId, loserId) {
   const target = teams.find(t => t.id === targetId)

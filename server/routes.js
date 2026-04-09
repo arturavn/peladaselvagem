@@ -10,6 +10,7 @@ import {
   buildTeams,
   buildTeamsManual,
   fillIncompleteFromLoser,
+  consolidateWaitingTeams,
 } from './gameLogic.js'
 
 const router = Router()
@@ -197,22 +198,20 @@ router.post('/actions/select-winner', async (req, res) => {
     // 2. Get loserId
     const loserId = winnerTeamId === teamAId ? teamBId : teamAId
 
-    // 2b. Return substituted players to their original team if loser had subs
+    // 2b. Return ALL substituted players to their original waiting teams
     const subs = state.activeMatch.substitutions ?? []
     for (const sub of subs) {
-      if (sub.toTeamId === loserId) {
-        teams = teams.map(t => {
-          if (t.id === loserId) {
-            const players = t.players.filter(p => p !== sub.player)
-            return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
-          }
-          if (t.id === sub.fromTeamId) {
-            const players = [...t.players, sub.player]
-            return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
-          }
-          return t
-        })
-      }
+      teams = teams.map(t => {
+        if (t.id === sub.toTeamId) {
+          const players = t.players.filter(p => p !== sub.player)
+          return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
+        }
+        if (t.id === sub.fromTeamId) {
+          const players = [...t.players, sub.player]
+          return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
+        }
+        return t
+      })
     }
 
     // 3. Get rest = teamQueue filtered to remove both playing teams, complete first
@@ -255,7 +254,12 @@ router.post('/actions/select-winner', async (req, res) => {
       }
     }
 
-    // 7. Update state
+    // 7. Consolidate fragmented incomplete waiting teams
+    const consolidatedW = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1]].filter(Boolean))
+    teams = consolidatedW.teams
+    newQueue = consolidatedW.teamQueue
+
+    // 8. Update state
     state.teams = teams
     state.teamQueue = newQueue
     state.activeMatch = null
@@ -284,22 +288,20 @@ router.post('/actions/resolve-empate', async (req, res) => {
     const { teamAId, teamBId } = state.activeMatch
     const loserId = coinTossWinnerId === teamAId ? teamBId : teamAId
 
-    // Return substituted players to their original team if loser had subs
+    // Return ALL substituted players to their original waiting teams
     const subs = state.activeMatch.substitutions ?? []
     for (const sub of subs) {
-      if (sub.toTeamId === loserId) {
-        teams = teams.map(t => {
-          if (t.id === loserId) {
-            const players = t.players.filter(p => p !== sub.player)
-            return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
-          }
-          if (t.id === sub.fromTeamId) {
-            const players = [...t.players, sub.player]
-            return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
-          }
-          return t
-        })
-      }
+      teams = teams.map(t => {
+        if (t.id === sub.toTeamId) {
+          const players = t.players.filter(p => p !== sub.player)
+          return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
+        }
+        if (t.id === sub.fromTeamId) {
+          const players = [...t.players, sub.player]
+          return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
+        }
+        return t
+      })
     }
 
     const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
@@ -335,6 +337,11 @@ router.post('/actions/resolve-empate', async (req, res) => {
         newQueue = [loserId, teamBId]
       }
     }
+
+    // Consolidate fragmented incomplete waiting teams
+    const consolidatedE = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1]].filter(Boolean))
+    teams = consolidatedE.teams
+    newQueue = consolidatedE.teamQueue
 
     state.teams = teams
     state.teamQueue = newQueue
@@ -391,11 +398,16 @@ router.post('/actions/resolve-empate-swap', async (req, res) => {
     const priorityAfter = teams.find(t => t.id === priorityTeamId)
     const otherAfter    = teams.find(t => t.id === otherId)
 
-    const newQueue = [
+    let newQueue = [
       ...rest,
       ...(priorityAfter?.players?.length > 0 ? [priorityTeamId] : []),
       ...(otherAfter?.players?.length > 0    ? [otherId]         : []),
     ]
+
+    // Consolidate fragmented incomplete waiting teams
+    const consolidatedS = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1]].filter(Boolean))
+    teams = consolidatedS.teams
+    newQueue = consolidatedS.teamQueue
 
     state.teams = teams
     state.teamQueue = newQueue
