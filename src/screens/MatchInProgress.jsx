@@ -459,7 +459,9 @@ export default function MatchInProgress({
   const displayMs = isPaused ? (pausedRemaining ?? 0) : remaining
 
   const totalMs    = duration * 60 * 1000
-  const isFinished = !isPaused && remaining <= 0
+  // isFinished only when endTime is actually in the past — prevents false trigger
+  // on resume after refresh (remaining is stale 0 for one render before timer updates)
+  const isFinished = !isPaused && remaining <= 0 && endTime != null && endTime <= Date.now()
   const isDanger   = displayMs <= 30_000 && displayMs > 0 && !isPaused
   const progress   = totalMs > 0 ? Math.max(0, displayMs / totalMs) : 0
 
