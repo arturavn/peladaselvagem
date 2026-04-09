@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Confetti from './Confetti'
 import { TEAM_ROLE, getInitials } from './BottomNav'
+import ConfirmActionModal from './ConfirmActionModal'
 
 /* ── Decorative confetti rectangles (background) ─────────── */
 
@@ -153,8 +154,10 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
   const [showConfetti, setShowConfetti] = useState(false)
   const [empateMode, setEmpateMode] = useState(false)   // coin toss mode
   const [empateSwapMode, setEmpateSwapMode] = useState(false) // both out mode
+  const [pendingConfirm, setPendingConfirm] = useState(false) // confirmation overlay
 
-  const handleConfirm = async () => {
+  const executeConfirm = async () => {
+    setPendingConfirm(false)
     if (confirming) return
     if (empateSwapMode) {
       setConfirming(true)
@@ -176,6 +179,12 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
       setConfirming(false)
       setShowConfetti(false)
     }
+  }
+
+  const handleConfirm = () => {
+    if (confirming) return
+    if (!empateSwapMode && !selected) return
+    setPendingConfirm(true)
   }
 
   const handleEmpate = () => {
@@ -455,6 +464,18 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
           </div>
         </div>
       </div>
+
+      {pendingConfirm && (
+        <ConfirmActionModal
+          message={
+            empateSwapMode ? 'TROCAR OS TIMES?' :
+            empateMode     ? `SORTEIO: ${selected?.captain?.toUpperCase()}?` :
+                             `VENCEDOR: ${selected?.captain?.toUpperCase()}?`
+          }
+          onConfirm={executeConfirm}
+          onCancel={() => setPendingConfirm(false)}
+        />
+      )}
     </>
   )
 }
