@@ -263,7 +263,7 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
                 fontFamily: 'var(--font-body)', fontSize: 11,
                 color: 'var(--text-3)', fontWeight: 500, lineHeight: 1.5,
               }}>
-                Há {waitingCompleteCount} {waitingCompleteCount === 1 ? 'time completo' : 'times completos'} esperando.
+                Há {waitingCompleteCount} {waitingCompleteCount === 1 ? 'time' : 'times'} esperando.
                 Os próximos dois times da fila entram em campo.
               </div>
             </div>
