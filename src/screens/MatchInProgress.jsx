@@ -907,7 +907,7 @@ export default function MatchInProgress({
           allTeams={allTeams}
           teamQueue={teamQueue}
           onClose={() => setShowSubModal(false)}
-          onRemove={(playerName, continues) => onRemoveMatchPlayer(playerName, remaining, continues)}
+          onRemove={(playerName, continues) => onRemoveMatchPlayer(playerName, displayMs, continues)}
         />
       )}
 
