@@ -198,20 +198,41 @@ router.post('/actions/select-winner', async (req, res) => {
     // 2. Get loserId
     const loserId = winnerTeamId === teamAId ? teamBId : teamAId
 
-    // 2b. Return ALL substituted players to their original waiting teams
+    // 2b. Handle substitutions based on outcome:
+    //   • Sub won  → earned their spot, stays with winner (no change)
+    //   • Sub lost → removed from loser, goes to front of original team (first in line)
     const subs = state.activeMatch.substitutions ?? []
     for (const sub of subs) {
+      if (sub.toTeamId !== loserId) continue  // sub is on winning team → keep them there
+
       teams = teams.map(t => {
-        if (t.id === sub.toTeamId) {
+        if (t.id === loserId) {
+          // Remove sub from losing team
           const players = t.players.filter(p => p !== sub.player)
           return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
         }
         if (t.id === sub.fromTeamId) {
-          const players = [...t.players, sub.player]
+          // Insert at front of original team — they're first in line
+          const players = [sub.player, ...t.players]
           return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
         }
         return t
       })
+
+      // If fromTeam was deleted (emptied during match), add sub to first incomplete waiting team
+      if (!teams.find(t => t.id === sub.fromTeamId)) {
+        const playingIds2 = [teamAId, teamBId]
+        const firstIncompleteWaiting = state.teamQueue
+          .filter(id => !playingIds2.includes(id))
+          .find(id => { const t = teams.find(t => t.id === id); return t && t.players.length < TEAM_SIZE })
+        if (firstIncompleteWaiting) {
+          teams = teams.map(t => {
+            if (t.id !== firstIncompleteWaiting) return t
+            const players = [sub.player, ...t.players]
+            return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
+          })
+        }
+      }
     }
 
     // 3. Get rest = teamQueue filtered to remove both playing teams, complete first
@@ -288,20 +309,38 @@ router.post('/actions/resolve-empate', async (req, res) => {
     const { teamAId, teamBId } = state.activeMatch
     const loserId = coinTossWinnerId === teamAId ? teamBId : teamAId
 
-    // Return ALL substituted players to their original waiting teams
+    // Handle substitutions based on outcome:
+    //   • Sub won  → earned their spot, stays with coin-toss winner (no change)
+    //   • Sub lost → removed from loser, goes to front of original team (first in line)
     const subs = state.activeMatch.substitutions ?? []
     for (const sub of subs) {
+      if (sub.toTeamId !== loserId) continue  // sub is on winning team → keep them there
+
       teams = teams.map(t => {
-        if (t.id === sub.toTeamId) {
+        if (t.id === loserId) {
           const players = t.players.filter(p => p !== sub.player)
           return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
         }
         if (t.id === sub.fromTeamId) {
-          const players = [...t.players, sub.player]
+          const players = [sub.player, ...t.players]
           return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
         }
         return t
       })
+
+      if (!teams.find(t => t.id === sub.fromTeamId)) {
+        const playingIds2 = [teamAId, teamBId]
+        const firstIncompleteWaiting = state.teamQueue
+          .filter(id => !playingIds2.includes(id))
+          .find(id => { const t = teams.find(t => t.id === id); return t && t.players.length < TEAM_SIZE })
+        if (firstIncompleteWaiting) {
+          teams = teams.map(t => {
+            if (t.id !== firstIncompleteWaiting) return t
+            const players = [sub.player, ...t.players]
+            return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
+          })
+        }
+      }
     }
 
     const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
@@ -379,7 +418,8 @@ router.post('/actions/resolve-empate-swap', async (req, res) => {
           return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
         }
         if (t.id === sub.fromTeamId) {
-          const players = [...t.players, sub.player]
+          // Insert at front — sub is first in line within their original team
+          const players = [sub.player, ...t.players]
           return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
         }
         return t
