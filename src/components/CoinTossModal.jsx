@@ -1,53 +1,63 @@
 import { useState, useRef } from 'react'
 import Portal from './Portal'
-import { getInitials, TEAM_ROLE } from './BottomNav'
 
-/* ── Coin face ──────────────────────────────────────────── */
+/* ── Coin faces ─────────────────────────────────────────── */
 
-function CoinFace({ side, flipped }) {
-  const isCara = side === 'cara'
+function CoinFront() {
   return (
     <div style={{
-      position: 'absolute',
-      inset: 0,
-      borderRadius: '50%',
-      backfaceVisibility: 'hidden',
-      WebkitBackfaceVisibility: 'hidden',
-      transform: flipped ? 'rotateY(180deg)' : 'none',
-      background: isCara
-        ? 'radial-gradient(circle at 38% 32%, #FFE066, #C8960C 55%, #8A6200)'
-        : 'radial-gradient(circle at 38% 32%, #E8E8E8, #A0A0A0 55%, #585858)',
-      boxShadow: isCara
-        ? 'inset 0 3px 8px rgba(255,255,255,0.5), inset 0 -3px 6px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.6)'
-        : 'inset 0 3px 8px rgba(255,255,255,0.4), inset 0 -3px 6px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.6)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 4,
-      userSelect: 'none',
+      position: 'absolute', inset: 0, borderRadius: '50%',
+      backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+      background: 'radial-gradient(circle at 38% 32%, #FFF3A0, #F5C200 28%, #C48800 58%, #7A5000)',
+      boxShadow: 'inset 0 3px 10px rgba(255,255,200,0.55), inset 0 -4px 8px rgba(0,0,0,0.45), 0 6px 24px rgba(0,0,0,0.7)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden',
     }}>
-      {/* Rim ring */}
+      {/* Outer rim */}
       <div style={{
-        position: 'absolute',
-        inset: 6,
-        borderRadius: '50%',
-        border: `2px solid ${isCara ? 'rgba(255,200,0,0.45)' : 'rgba(200,200,200,0.4)'}`,
+        position: 'absolute', inset: 5, borderRadius: '50%',
+        border: '2.5px solid rgba(255,220,80,0.5)',
         pointerEvents: 'none',
       }} />
-
-      <span style={{ fontSize: 36, lineHeight: 1 }}>
-        {isCara ? '⚽' : '👑'}
-      </span>
+      {/* Inner rim */}
+      <div style={{
+        position: 'absolute', inset: 11, borderRadius: '50%',
+        border: '1px solid rgba(255,220,80,0.25)',
+        pointerEvents: 'none',
+      }} />
+      <span style={{ fontSize: 42, lineHeight: 1, marginBottom: 2, filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.4))' }}>⚽</span>
       <span style={{
-        fontFamily: 'var(--font-display)',
-        fontSize: 13,
-        letterSpacing: '0.14em',
-        color: isCara ? '#5A3A00' : '#2A2A2A',
-        fontWeight: 700,
-      }}>
-        {isCara ? 'CARA' : 'COROA'}
-      </span>
+        fontFamily: 'var(--font-display)', fontSize: 14, letterSpacing: '0.2em',
+        color: '#5A3500', fontWeight: 900, textShadow: '0 1px 0 rgba(255,220,100,0.5)',
+      }}>CARA</span>
+    </div>
+  )
+}
+
+function CoinBack() {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, borderRadius: '50%',
+      backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+      transform: 'rotateY(180deg)',
+      background: 'radial-gradient(circle at 62% 35%, #FFF3A0, #E8B400 28%, #A87000 58%, #5A3800)',
+      boxShadow: 'inset 0 3px 10px rgba(255,255,200,0.55), inset 0 -4px 8px rgba(0,0,0,0.45), 0 6px 24px rgba(0,0,0,0.7)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden',
+    }}>
+      <div style={{
+        position: 'absolute', inset: 5, borderRadius: '50%',
+        border: '2.5px solid rgba(255,200,60,0.5)', pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 11, borderRadius: '50%',
+        border: '1px solid rgba(255,200,60,0.25)', pointerEvents: 'none',
+      }} />
+      <span style={{ fontSize: 42, lineHeight: 1, marginBottom: 2, filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.4))' }}>👑</span>
+      <span style={{
+        fontFamily: 'var(--font-display)', fontSize: 14, letterSpacing: '0.2em',
+        color: '#3A2000', fontWeight: 900, textShadow: '0 1px 0 rgba(255,200,80,0.5)',
+      }}>COROA</span>
     </div>
   )
 }
@@ -55,228 +65,173 @@ function CoinFace({ side, flipped }) {
 /* ── Main modal ─────────────────────────────────────────── */
 
 export default function CoinTossModal({ teamA, teamB, onResult, onCancel }) {
-  // teamA = CARA, teamB = COROA (assignment shown to user)
-  const [phase, setPhase] = useState('ready') // 'ready' | 'spinning' | 'result'
-  const [result, setResult] = useState(null)  // 'cara' | 'coroa'
-  const coinInnerRef = useRef(null)
+  const [phase, setPhase] = useState('ready')      // 'ready' | 'spinning' | 'result' | 'pick'
+  const [result, setResult] = useState(null)        // 'cara' | 'coroa'
+  const coinRef = useRef(null)
 
   const handleFlip = () => {
     if (phase !== 'ready') return
     const isCara = Math.random() < 0.5
-    const newResult = isCara ? 'cara' : 'coroa'
     setPhase('spinning')
 
-    const spins = 5 + Math.floor(Math.random() * 4) // 5–8 full rotations
-    // Extra 180° for coroa so it lands face-down (shows coroa face)
-    const finalAngle = spins * 360 + (isCara ? 0 : 180)
+    const spins = 9 + Math.floor(Math.random() * 7)   // 9-15 full rotations
+    const finalAngle = isCara ? spins * 360 : spins * 360 + 180
 
-    if (coinInnerRef.current) {
-      const anim = coinInnerRef.current.animate(
-        [
-          { transform: 'rotateY(0deg) translateY(0px) scale(1)' },
-          { transform: `rotateY(${finalAngle * 0.38}deg) translateY(-110px) scale(1.5)`, offset: 0.32 },
-          { transform: `rotateY(${finalAngle * 0.72}deg) translateY(-50px) scale(1.2)`,  offset: 0.68 },
-          { transform: `rotateY(${finalAngle}deg) translateY(0px) scale(1)` },
-        ],
-        { duration: 2400, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards' }
-      )
-      anim.onfinish = () => {
-        setResult(newResult)
-        setPhase('result')
-      }
+    coinRef.current.animate(
+      [
+        { transform: 'translateY(0px)   rotateY(0deg)             scale(1)'   },
+        { transform: `translateY(-240px) rotateY(${finalAngle * 0.42}deg) scale(1.25)`, offset: 0.30 },
+        { transform: `translateY(-130px) rotateY(${finalAngle * 0.70}deg) scale(1.12)`, offset: 0.58 },
+        { transform: `translateY(-24px)  rotateY(${finalAngle * 0.94}deg) scale(1.03)`, offset: 0.85 },
+        { transform: `translateY(0px)   rotateY(${finalAngle}deg)   scale(1)`   },
+      ],
+      { duration: 2400, easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)', fill: 'forwards' }
+    ).onfinish = () => {
+      setResult(isCara ? 'cara' : 'coroa')
+      setPhase('result')
     }
   }
 
-  const winnerTeam = result === 'cara' ? teamA : teamB
-  const loserTeam  = result === 'cara' ? teamB : teamA
+  const handleSelectWinner = (team) => {
+    const loser = team.id === teamA.id ? teamB : teamA
+    onResult(team.id, loser.id)
+  }
+
+  const resultLabel = result === 'cara' ? '⚽ CARA!' : '👑 COROA!'
+  const resultColor = result === 'cara' ? '#FFD700' : '#E8B400'
 
   return (
     <Portal>
       <div style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.82)',
-        backdropFilter: 'blur(8px)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
+        position: 'fixed', inset: 0,
+        background: 'rgba(0,0,0,0.88)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'flex-end',
         zIndex: 9999,
-        padding: '0 0 calc(72px + var(--safe-bottom, 0px))',
+        padding: '0 0 calc(68px + var(--safe-bottom, 0px))',
+        overflow: 'hidden',
       }}>
         <div
           onClick={e => e.stopPropagation()}
           style={{
-            width: '100%',
-            maxWidth: 390,
+            width: '100%', maxWidth: 390,
             background: '#0E0E0E',
             borderRadius: '20px 20px 0 0',
             border: '1px solid rgba(255,255,255,0.08)',
             borderBottom: 'none',
-            padding: '28px 24px 24px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 0,
+            padding: '32px 24px 24px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            overflow: 'visible',
+            position: 'relative',
           }}
         >
           {/* Header */}
           <div style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 9,
-            fontWeight: 700,
-            letterSpacing: '0.18em',
-            color: 'rgba(255,149,0,0.8)',
-            textTransform: 'uppercase',
-            marginBottom: 6,
-            alignSelf: 'flex-start',
+            alignSelf: 'flex-start', marginBottom: 24, width: '100%',
           }}>
-            Empate — sorteio
-          </div>
-          <div style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 36,
-            letterSpacing: '0.04em',
-            color: '#F0F0F0',
-            alignSelf: 'flex-start',
-            marginBottom: 24,
-            lineHeight: 1,
-          }}>
-            {phase === 'result'
-              ? <><span style={{ color: result === 'cara' ? '#FFD700' : '#C0C0C0' }}>{result.toUpperCase()}</span>!</>
-              : 'LANÇAR MOEDA'}
-          </div>
-
-          {/* Team assignments */}
-          {phase !== 'result' && (
             <div style={{
-              display: 'flex',
-              width: '100%',
-              gap: 8,
-              marginBottom: 28,
+              fontFamily: 'var(--font-body)', fontSize: 9, fontWeight: 700,
+              letterSpacing: '0.18em', color: 'rgba(255,149,0,0.8)',
+              textTransform: 'uppercase', marginBottom: 5,
+            }}>Empate — sorteio</div>
+            <div style={{
+              fontFamily: 'var(--font-display)', fontSize: 32,
+              letterSpacing: '0.04em', lineHeight: 1, color: '#F0F0F0',
             }}>
-              {[
-                { label: '⚽ CARA',  team: teamA, color: '#FFD700' },
-                { label: '👑 COROA', team: teamB, color: '#C0C0C0' },
-              ].map(({ label, team, color }) => (
-                <div key={label} style={{
-                  flex: 1,
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 'var(--radius)',
-                  padding: '10px 12px',
-                  textAlign: 'center',
-                }}>
-                  <div style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 11,
-                    letterSpacing: '0.12em',
-                    color,
-                    marginBottom: 4,
-                  }}>
-                    {label}
-                  </div>
-                  <div style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 16,
-                    letterSpacing: '0.04em',
-                    color: '#CCCCCC',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {(team?.captain ?? '—').toUpperCase()}
-                  </div>
-                </div>
-              ))}
+              {phase === 'result' || phase === 'pick'
+                ? <span style={{ color: resultColor }}>{resultLabel}</span>
+                : 'LANÇAR MOEDA'}
             </div>
-          )}
+            {(phase === 'result' || phase === 'pick') && (
+              <div style={{
+                fontFamily: 'var(--font-body)', fontSize: 12,
+                color: 'var(--text-3)', marginTop: 6, fontWeight: 500,
+              }}>
+                Qual time ganhou o sorteio?
+              </div>
+            )}
+          </div>
 
-          {/* Coin */}
+          {/* Coin — overflow visible so it can fly above modal */}
           <div style={{
-            perspective: '700px',
-            width: 140,
-            height: 140,
-            marginBottom: phase === 'result' ? 16 : 28,
+            perspective: '600px',
+            width: 148, height: 148,
+            marginBottom: 28,
+            overflow: 'visible',
+            position: 'relative',
+            zIndex: 10,
           }}>
             <div
-              ref={coinInnerRef}
+              ref={coinRef}
               style={{
-                width: 140,
-                height: 140,
+                width: 148, height: 148,
                 transformStyle: 'preserve-3d',
                 WebkitTransformStyle: 'preserve-3d',
                 position: 'relative',
               }}
             >
-              <CoinFace side="cara"  flipped={false} />
-              <CoinFace side="coroa" flipped={true}  />
+              <CoinFront />
+              <CoinBack />
             </div>
           </div>
 
-          {/* Result: show winner / loser */}
-          {phase === 'result' && (
-            <div style={{ width: '100%', marginBottom: 20 }}>
-              <div style={{
-                display: 'flex',
-                gap: 8,
-                width: '100%',
-              }}>
-                {[
-                  { team: winnerTeam, label: 'VENCEDOR', color: 'rgba(255,200,0,0.15)', border: 'rgba(255,200,0,0.4)', textColor: '#FFD700', badge: '🏆 ENTRA ANTES' },
-                  { team: loserTeam,  label: 'PERDEDOR',  color: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', textColor: 'var(--text-3)', badge: 'ENTRA DEPOIS' },
-                ].map(({ team, label, color, border, textColor, badge }) => (
-                  <div key={label} style={{
-                    flex: 1,
-                    background: color,
-                    border: `1px solid ${border}`,
+          {/* Team picker — shown after result */}
+          {(phase === 'result' || phase === 'pick') && (
+            <div style={{ display: 'flex', gap: 10, width: '100%', marginBottom: 16 }}>
+              {[teamA, teamB].map(team => (
+                <button
+                  key={team?.id}
+                  onClick={() => team && handleSelectWinner(team)}
+                  style={{
+                    flex: 1, height: 64,
+                    background: 'rgba(255,149,0,0.08)',
+                    border: '1px solid rgba(255,149,0,0.25)',
                     borderRadius: 'var(--radius)',
-                    padding: '12px',
-                    textAlign: 'center',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', gap: 2,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseOver={e => {
+                    e.currentTarget.style.background = 'rgba(255,149,0,0.18)'
+                    e.currentTarget.style.border = '1px solid rgba(255,149,0,0.5)'
+                  }}
+                  onMouseOut={e => {
+                    e.currentTarget.style.background = 'rgba(255,149,0,0.08)'
+                    e.currentTarget.style.border = '1px solid rgba(255,149,0,0.25)'
+                  }}
+                >
+                  <span style={{
+                    fontFamily: 'var(--font-display)', fontSize: 18,
+                    letterSpacing: '0.06em', color: '#F0F0F0',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    maxWidth: '100%', padding: '0 8px',
                   }}>
-                    <div style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 9,
-                      fontWeight: 700,
-                      letterSpacing: '0.14em',
-                      color: textColor,
-                      marginBottom: 4,
-                    }}>
-                      {badge}
-                    </div>
-                    <div style={{
-                      fontFamily: 'var(--font-display)',
-                      fontSize: 17,
-                      letterSpacing: '0.04em',
-                      color: '#F0F0F0',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {(team?.captain ?? '—').toUpperCase()}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    {(team?.captain ?? '—').toUpperCase()}
+                  </span>
+                  <span style={{
+                    fontFamily: 'var(--font-body)', fontSize: 10,
+                    color: 'rgba(255,149,0,0.7)', fontWeight: 600, letterSpacing: '0.08em',
+                  }}>
+                    GANHOU O SORTEIO
+                  </span>
+                </button>
+              ))}
             </div>
           )}
 
-          {/* Buttons */}
+          {/* Bottom buttons */}
           <div style={{ display: 'flex', gap: 10, width: '100%' }}>
             <button
               onClick={onCancel}
               style={{
-                flex: '0 0 auto',
-                width: 100,
-                height: 52,
+                flex: '0 0 auto', width: 92, height: 48,
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.09)',
                 borderRadius: 'var(--radius)',
-                fontFamily: 'var(--font-display)',
-                fontSize: 13,
-                letterSpacing: '0.08em',
-                color: 'var(--text-3)',
-                cursor: 'pointer',
+                fontFamily: 'var(--font-display)', fontSize: 12,
+                letterSpacing: '0.08em', color: 'var(--text-3)', cursor: 'pointer',
               }}
             >
               VOLTAR
@@ -286,64 +241,28 @@ export default function CoinTossModal({ teamA, teamB, onResult, onCancel }) {
               <button
                 onClick={handleFlip}
                 style={{
-                  flex: 1,
-                  height: 52,
-                  background: 'linear-gradient(135deg, #C8960C, #FFD700, #C8960C)',
-                  border: 'none',
-                  borderRadius: 'var(--radius)',
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 19,
-                  letterSpacing: '0.1em',
-                  color: '#080808',
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                  boxShadow: '0 0 20px rgba(200,150,0,0.4)',
+                  flex: 1, height: 48,
+                  background: 'linear-gradient(135deg, #B87800, #FFD700 50%, #B87800)',
+                  border: 'none', borderRadius: 'var(--radius)',
+                  fontFamily: 'var(--font-display)', fontSize: 20,
+                  letterSpacing: '0.1em', color: '#3A2000',
+                  cursor: 'pointer', fontWeight: 700,
+                  boxShadow: '0 0 24px rgba(200,150,0,0.45)',
                 }}
               >
-                LANÇAR 🪙
+                🪙 LANÇAR
               </button>
             )}
 
             {phase === 'spinning' && (
-              <button
-                disabled
-                style={{
-                  flex: 1,
-                  height: 52,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: 'var(--radius)',
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 15,
-                  letterSpacing: '0.08em',
-                  color: 'var(--text-3)',
-                  cursor: 'not-allowed',
-                }}
-              >
+              <div style={{
+                flex: 1, height: 48, display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-3)', fontFamily: 'var(--font-display)',
+                fontSize: 13, letterSpacing: '0.1em',
+              }}>
                 …
-              </button>
-            )}
-
-            {phase === 'result' && (
-              <button
-                onClick={() => onResult(winnerTeam.id, loserTeam.id)}
-                style={{
-                  flex: 1,
-                  height: 52,
-                  background: 'var(--warning)',
-                  border: 'none',
-                  borderRadius: 'var(--radius)',
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 17,
-                  letterSpacing: '0.1em',
-                  color: '#080808',
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                  boxShadow: '0 0 14px rgba(255,149,0,0.35)',
-                }}
-              >
-                CONFIRMAR
-              </button>
+              </div>
             )}
           </div>
         </div>
