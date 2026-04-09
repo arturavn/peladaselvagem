@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { TEAM_ROLE, getInitials } from '../components/BottomNav'
 import Portal from '../components/Portal'
+import ConfirmActionModal from '../components/ConfirmActionModal'
 
 /* ── Timer hook ─────────────────────────────────────────── */
 
@@ -464,6 +465,7 @@ export default function MatchInProgress({
 
   const [showSubModal, setShowSubModal] = useState(false)
   const [showSwapModal, setShowSwapModal] = useState(false)
+  const [confirmEnd, setConfirmEnd] = useState(false)
 
   const handlePause  = () => onPause(remaining)
   const handleResume = () => onResume()
@@ -822,7 +824,7 @@ export default function MatchInProgress({
         zIndex: 10,
       }}>
         <button
-          onClick={onEnd}
+          onClick={() => setConfirmEnd(true)}
           style={{
             width: '100%',
             height: 56,
@@ -846,6 +848,14 @@ export default function MatchInProgress({
           ENCERRAR PARTIDA
         </button>
       </div>
+
+      {confirmEnd && (
+        <ConfirmActionModal
+          message="ENCERRAR PARTIDA?"
+          onConfirm={() => { setConfirmEnd(false); onEnd() }}
+          onCancel={() => setConfirmEnd(false)}
+        />
+      )}
     </div>
   )
 }

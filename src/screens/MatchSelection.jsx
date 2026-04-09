@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { TEAM_ROLE, getInitials } from '../components/BottomNav'
 import Portal from '../components/Portal'
+import ConfirmActionModal from '../components/ConfirmActionModal'
 
 /* ── Icons ─────────────────────────────────────────────── */
 
@@ -386,6 +387,7 @@ export default function MatchSelection({
   const teamA = getTeam(teamAId)
   const teamB = getTeam(teamBId)
   const canStart = teamAId && teamBId && teamAId !== teamBId
+  const [confirmStart, setConfirmStart] = useState(false)
 
   const handleToggle = (slot) => {
     setExpandedSlot(prev => prev === slot ? null : slot)
@@ -595,7 +597,7 @@ export default function MatchSelection({
       {/* ── Start button — natural flow, always below all content ── */}
       <div style={{ padding: '16px 20px' }}>
         <button
-          onClick={() => canStart && onStart(teamAId, teamBId, duration)}
+          onClick={() => canStart && setConfirmStart(true)}
           disabled={!canStart}
           style={{
             width: '100%',
@@ -629,6 +631,14 @@ export default function MatchSelection({
           currentTeamBId={teamBId}
           onConfirm={handleConfirmSwap}
           onClose={() => setShowPickerModal(false)}
+        />
+      )}
+
+      {confirmStart && (
+        <ConfirmActionModal
+          message="INICIAR PARTIDA?"
+          onConfirm={() => { setConfirmStart(false); onStart(teamAId, teamBId, duration) }}
+          onCancel={() => setConfirmStart(false)}
         />
       )}
     </div>
