@@ -598,23 +598,21 @@ router.post('/actions/remove-match-player', async (req, res) => {
       }
     }
 
-    // If player continues, add them to the LAST incomplete waiting team (tail) — not the first
+    // If player continues, add them to the very last waiting team (tail)
     if (continues) {
       const playingIds = [teamAId, teamBId]
       const waitingQueueIds = state.teamQueue.filter(id => !playingIds.includes(id))
-      const lastIncompleteId = [...waitingQueueIds].reverse().find(id => {
-        const t = state.teams.find(t => t.id === id)
-        return t && t.players.length < TEAM_SIZE
-      }) ?? null
+      const lastId = waitingQueueIds[waitingQueueIds.length - 1]
+      const lastTeam = lastId ? state.teams.find(t => t.id === lastId) : null
 
-      if (lastIncompleteId) {
+      if (lastTeam && lastTeam.players.length < TEAM_SIZE) {
         state.teams = state.teams.map(t => {
-          if (t.id !== lastIncompleteId) return t
+          if (t.id !== lastId) return t
           const players = [...t.players, playerName]
           return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
         })
       } else {
-        // All waiting teams are full — create new team at the end
+        // All waiting teams are full — create new team at end
         const newIdx = state.teams.length
         const newTeam = {
           id: `team-${newIdx}`,
