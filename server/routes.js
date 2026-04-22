@@ -565,6 +565,36 @@ router.post('/actions/remove-match-player', async (req, res) => {
       }
     }
 
+    // Cascade refill: donor team gave a player and is now incomplete.
+    // Pull the first player from the next waiting team to keep the donor full.
+    if (substitution) {
+      const waitingNow = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
+      const donorNow = state.teams.find(t => t.id === substitution.fromTeamId)
+      if (donorNow && donorNow.players.length < TEAM_SIZE) {
+        const donorIdx = waitingNow.indexOf(substitution.fromTeamId)
+        const nextId = waitingNow[donorIdx + 1]
+        const nextTeam = nextId ? state.teams.find(t => t.id === nextId) : null
+        if (nextTeam && nextTeam.players.length > 0) {
+          const refillPlayer = nextTeam.players[0]
+          const nextTeamNew = nextTeam.players.filter(p => p !== refillPlayer)
+          state.teams = state.teams.map(t => {
+            if (t.id === substitution.fromTeamId) {
+              const players = [...t.players, refillPlayer]
+              return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
+            }
+            if (t.id === nextId) {
+              return { ...t, players: nextTeamNew, captain: nextTeamNew[0] ?? null, complete: nextTeamNew.length >= TEAM_SIZE }
+            }
+            return t
+          })
+          if (nextTeamNew.length === 0) {
+            state.teams = state.teams.filter(t => t.id !== nextId)
+            state.teamQueue = state.teamQueue.filter(id => id !== nextId)
+          }
+        }
+      }
+    }
+
     // If player continues, add them to the LAST incomplete waiting team (tail) — not the first
     if (continues) {
       const playingIds = [teamAId, teamBId]
