@@ -283,6 +283,12 @@ router.post('/actions/select-winner', async (req, res) => {
     })
     if (lastIncompleteId) {
       teams = fillIncompleteFromLoser(teams, lastIncompleteId, loserId)
+      // If loser was fully consumed by the fill, remove it from queue
+      const loserNow = teams.find(t => t.id === loserId)
+      if (!loserNow || loserNow.players.length === 0) {
+        teams = teams.filter(t => t.id !== loserId)
+        newQueue = newQueue.filter(id => id !== loserId)
+      }
     }
 
     // 7. Consolidate any remaining fragmented incomplete waiting teams
@@ -392,6 +398,11 @@ router.post('/actions/resolve-empate', async (req, res) => {
     })
     if (lastIncompleteIdE) {
       teams = fillIncompleteFromLoser(teams, lastIncompleteIdE, loserId)
+      const loserNowE = teams.find(t => t.id === loserId)
+      if (!loserNowE || loserNowE.players.length === 0) {
+        teams = teams.filter(t => t.id !== loserId)
+        newQueue = newQueue.filter(id => id !== loserId)
+      }
     }
 
     // Consolidate any remaining fragmented incomplete waiting teams
