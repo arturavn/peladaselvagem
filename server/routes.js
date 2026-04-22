@@ -273,11 +273,12 @@ router.post('/actions/select-winner', async (req, res) => {
       }
     }
 
-    // 6. Spreadsheet rotation: fill the last incomplete tail team from the loser.
-    //    Only fills positions 2+ (never the two teams about to play).
+    // 6. Spreadsheet rotation: fill the last incomplete team from the loser.
+    //    Never fills the winner's team or the loser itself.
     //    Loser's first N players complete the tail; remaining loser players become new tail.
-    const lastIncompleteId = [...newQueue].slice(2).reverse().find(id => {
+    const lastIncompleteId = [...newQueue].reverse().find(id => {
       if (id === loserId) return false
+      if (id === winnerTeamId) return false
       const t = teams.find(t => t.id === id)
       return t && t.players.length > 0 && t.players.length < TEAM_SIZE
     })
@@ -390,9 +391,11 @@ router.post('/actions/resolve-empate', async (req, res) => {
       }
     }
 
-    // Spreadsheet rotation: fill last incomplete tail from loser (positions 2+ only)
-    const lastIncompleteIdE = [...newQueue].slice(2).reverse().find(id => {
+    // Spreadsheet rotation: fill last incomplete team from loser.
+    // Never fills the coin-toss winner's team or the loser itself.
+    const lastIncompleteIdE = [...newQueue].reverse().find(id => {
       if (id === loserId) return false
+      if (id === coinTossWinnerId) return false
       const t = teams.find(t => t.id === id)
       return t && t.players.length > 0 && t.players.length < TEAM_SIZE
     })
