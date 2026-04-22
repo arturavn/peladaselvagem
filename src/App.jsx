@@ -221,18 +221,18 @@ export default function App() {
   /* Derived */
   const getTeam = (id) => state.teams.find(t => t.id === id)
 
-  // Only complete teams are eligible to play
-  const completeQueueIds = state.teamQueue.filter(id => {
+  // Teams with players in queue order — used for next-match selection and preview
+  const playableQueueIds = state.teamQueue.filter(id => {
     const t = state.teams.find(t => t.id === id)
-    return t && t.complete
+    return t && t.players.length > 0
   })
   // Use activeMatch teams if pre-set (e.g. manual setup), otherwise fall back to queue order
-  const defaultTeamAId = state.activeMatch?.teamAId ?? completeQueueIds[0] ?? null
-  const defaultTeamBId = state.activeMatch?.teamBId ?? completeQueueIds[1] ?? null
+  const defaultTeamAId = state.activeMatch?.teamAId ?? playableQueueIds[0] ?? null
+  const defaultTeamBId = state.activeMatch?.teamBId ?? playableQueueIds[1] ?? null
 
   const playingIds = state.activeMatch
     ? [state.activeMatch.teamAId, state.activeMatch.teamBId]
-    : completeQueueIds.slice(0, 2)
+    : playableQueueIds.slice(0, 2)
 
   const waitingTeams = state.teamQueue
     .filter(id => !playingIds.includes(id))
