@@ -734,29 +734,19 @@ router.post('/actions/add-late-player', async (req, res) => {
       ? [state.activeMatch.teamAId, state.activeMatch.teamBId]
       : []
 
-    // Find first incomplete team in waiting queue (not currently playing)
+    // Late players always go to the last waiting team (tail), same as "continues"
     const waitingQueueIds = state.teamQueue.filter(id => !playingIds.includes(id))
-    const firstIncompleteWaitingId = waitingQueueIds.find(id => {
-      const t = state.teams.find(t => t.id === id)
-      return t && t.players.length < TEAM_SIZE
-    }) ?? null
+    const lastId = waitingQueueIds[waitingQueueIds.length - 1]
+    const lastTeam = lastId ? state.teams.find(t => t.id === lastId) : null
 
-    if (firstIncompleteWaitingId) {
-      // Add player to the first incomplete waiting team (closest to playing)
+    if (lastTeam && lastTeam.players.length < TEAM_SIZE) {
       state.teams = state.teams.map(t => {
-        if (t.id === firstIncompleteWaitingId) {
-          const newPlayers = [...t.players, n]
-          return {
-            ...t,
-            players: newPlayers,
-            captain: newPlayers[0],
-            complete: newPlayers.length >= TEAM_SIZE,
-          }
-        }
-        return t
+        if (t.id !== lastId) return t
+        const newPlayers = [...t.players, n]
+        return { ...t, players: newPlayers, captain: newPlayers[0], complete: newPlayers.length >= TEAM_SIZE }
       })
     } else {
-      // Create a new team at the end
+      // No incomplete tail — create new team at end
       const newIdx = state.teams.length
       const newTeam = {
         id: `team-${newIdx}`,
@@ -769,17 +759,6 @@ router.post('/actions/add-late-player', async (req, res) => {
       state.teams = [...state.teams, newTeam]
       state.teamQueue = [...state.teamQueue, newTeam.id]
     }
-
-    // Reorganize queue: complete teams first, incomplete at end
-    const complete = state.teamQueue.filter(id => {
-      const t = state.teams.find(t => t.id === id)
-      return t && t.complete
-    })
-    const incomplete = state.teamQueue.filter(id => {
-      const t = state.teams.find(t => t.id === id)
-      return t && !t.complete
-    })
-    state.teamQueue = [...complete, ...incomplete]
 
     await saveState(state)
     res.json({ state })
