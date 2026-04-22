@@ -273,12 +273,24 @@ router.post('/actions/select-winner', async (req, res) => {
       }
     }
 
-    // 6. Consolidate fragmented incomplete waiting teams — protect loser from being merged
+    // 6. Spreadsheet rotation: fill the last incomplete tail team from the loser.
+    //    Only fills positions 2+ (never the two teams about to play).
+    //    Loser's first N players complete the tail; remaining loser players become new tail.
+    const lastIncompleteId = [...newQueue].slice(2).reverse().find(id => {
+      if (id === loserId) return false
+      const t = teams.find(t => t.id === id)
+      return t && t.players.length > 0 && t.players.length < TEAM_SIZE
+    })
+    if (lastIncompleteId) {
+      teams = fillIncompleteFromLoser(teams, lastIncompleteId, loserId)
+    }
+
+    // 7. Consolidate any remaining fragmented incomplete waiting teams
     const consolidatedW = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1], loserId].filter(Boolean))
     teams = consolidatedW.teams
     newQueue = consolidatedW.teamQueue
 
-    // 7. Update state
+    // 8. Update state
     state.teams = teams
     state.teamQueue = newQueue
     state.activeMatch = null
@@ -372,7 +384,17 @@ router.post('/actions/resolve-empate', async (req, res) => {
       }
     }
 
-    // Consolidate fragmented waiting teams — protect loser from being merged
+    // Spreadsheet rotation: fill last incomplete tail from loser (positions 2+ only)
+    const lastIncompleteIdE = [...newQueue].slice(2).reverse().find(id => {
+      if (id === loserId) return false
+      const t = teams.find(t => t.id === id)
+      return t && t.players.length > 0 && t.players.length < TEAM_SIZE
+    })
+    if (lastIncompleteIdE) {
+      teams = fillIncompleteFromLoser(teams, lastIncompleteIdE, loserId)
+    }
+
+    // Consolidate any remaining fragmented incomplete waiting teams
     const consolidatedE = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1], loserId].filter(Boolean))
     teams = consolidatedE.teams
     newQueue = consolidatedE.teamQueue
