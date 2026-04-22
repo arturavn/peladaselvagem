@@ -250,35 +250,18 @@ router.post('/actions/select-winner', async (req, res) => {
       }
     }
 
-    // 3. Get rest = teamQueue filtered to remove both playing teams, complete first
+    // 3. Get rest in original queue order — no resorting, no redistribution from loser
     const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
-    let rest = [
-      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
-      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
-    ]
+    const rest = [...restRaw]
 
-    // 4. Fill the first incomplete waiting team from loser so it can eventually play
-    const firstIncompleteId = rest.find(id => {
-      const t = teams.find(t => t.id === id)
-      return t && t.players.length < TEAM_SIZE
-    })
-    if (firstIncompleteId) {
-      teams = fillIncompleteFromLoser(teams, firstIncompleteId, loserId)
-      // Re-sort after fill (incomplete team may now be complete)
-      rest = [
-        ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
-        ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
-      ]
-    }
-
-    // 5. Remove loser from queue if it has 0 players after transfer
+    // 4. Loser goes to back of queue as-is; waiting teams stay in their original order
     const loserAfter = teams.find(t => t.id === loserId)
     const loserHasPlayers = loserAfter && loserAfter.players.length > 0
 
-    // 6. Queue rotation
+    // 5. Queue rotation
     let newQueue
     if (winnerTeamId === teamAId) {
-      // PRETO wins → stays PRETO [0], rest → after, loser → back
+      // PRETO wins → stays PRETO [0], rest in order, loser → back
       newQueue = [teamAId, ...rest, ...(loserHasPlayers ? [loserId] : [])]
     } else {
       // AMARELO wins → stays AMARELO, next waiting → PRETO, loser → back
@@ -290,8 +273,26 @@ router.post('/actions/select-winner', async (req, res) => {
       }
     }
 
-    // 7. Consolidate fragmented incomplete waiting teams
-    const consolidatedW = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1]].filter(Boolean))
+    // 6. Spreadsheet rotation: fill the last incomplete tail team from the loser.
+    //    Only fills positions 2+ (never the two teams about to play).
+    //    Loser's first N players complete the tail; remaining loser players become new tail.
+    const lastIncompleteId = [...newQueue].slice(2).reverse().find(id => {
+      if (id === loserId) return false
+      const t = teams.find(t => t.id === id)
+      return t && t.players.length > 0 && t.players.length < TEAM_SIZE
+    })
+    if (lastIncompleteId) {
+      teams = fillIncompleteFromLoser(teams, lastIncompleteId, loserId)
+      // If loser was fully consumed by the fill, remove it from queue
+      const loserNow = teams.find(t => t.id === loserId)
+      if (!loserNow || loserNow.players.length === 0) {
+        teams = teams.filter(t => t.id !== loserId)
+        newQueue = newQueue.filter(id => id !== loserId)
+      }
+    }
+
+    // 7. Consolidate any remaining fragmented incomplete waiting teams
+    const consolidatedW = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1], loserId].filter(Boolean))
     teams = consolidatedW.teams
     newQueue = consolidatedW.teamQueue
 
@@ -373,24 +374,7 @@ router.post('/actions/resolve-empate', async (req, res) => {
     }
 
     const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
-    let rest = [
-      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
-      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
-    ]
-
-    // Fill first incomplete waiting team from loser so it can eventually play
-    const firstIncompleteId = rest.find(id => {
-      const t = teams.find(t => t.id === id)
-      return t && t.players.length < TEAM_SIZE
-    })
-    if (firstIncompleteId) {
-      teams = fillIncompleteFromLoser(teams, firstIncompleteId, loserId)
-      // Re-sort after fill (incomplete team may now be complete)
-      rest = [
-        ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
-        ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
-      ]
-    }
+    const rest = [...restRaw]
 
     const loserAfter = teams.find(t => t.id === loserId)
     const loserHasPlayers = loserAfter && loserAfter.players.length > 0
@@ -406,8 +390,23 @@ router.post('/actions/resolve-empate', async (req, res) => {
       }
     }
 
-    // Consolidate fragmented incomplete waiting teams
-    const consolidatedE = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1]].filter(Boolean))
+    // Spreadsheet rotation: fill last incomplete tail from loser (positions 2+ only)
+    const lastIncompleteIdE = [...newQueue].slice(2).reverse().find(id => {
+      if (id === loserId) return false
+      const t = teams.find(t => t.id === id)
+      return t && t.players.length > 0 && t.players.length < TEAM_SIZE
+    })
+    if (lastIncompleteIdE) {
+      teams = fillIncompleteFromLoser(teams, lastIncompleteIdE, loserId)
+      const loserNowE = teams.find(t => t.id === loserId)
+      if (!loserNowE || loserNowE.players.length === 0) {
+        teams = teams.filter(t => t.id !== loserId)
+        newQueue = newQueue.filter(id => id !== loserId)
+      }
+    }
+
+    // Consolidate any remaining fragmented incomplete waiting teams
+    const consolidatedE = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1], loserId].filter(Boolean))
     teams = consolidatedE.teams
     newQueue = consolidatedE.teamQueue
 
@@ -805,15 +804,16 @@ router.post('/actions/next-match', async (req, res) => {
   try {
     const state = await getState()
 
-    // Only select complete teams for the next match
-    const completeIds = state.teamQueue.filter(id => {
+    // Pick the first two teams in queue order that have at least one player.
+    // Incomplete teams can still play (4v5 happens in real pelada).
+    const playableIds = state.teamQueue.filter(id => {
       const t = state.teams.find(t => t.id === id)
-      return t && t.complete
+      return t && t.players.length > 0
     })
-    const [teamAId, teamBId] = completeIds
+    const [teamAId, teamBId] = playableIds
 
     if (!teamAId || !teamBId) {
-      return res.status(400).json({ error: 'Not enough complete teams in queue' })
+      return res.status(400).json({ error: 'Não há times suficientes na fila' })
     }
 
     state.activeMatch = {

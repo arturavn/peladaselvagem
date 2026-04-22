@@ -893,13 +893,10 @@ export default function WaitingQueue({ teams, teamQueue, waitingTeams, lastWinne
   const [showRemoveModal, setShowRemoveModal] = useState(false)
   const [showAdjustModal, setShowAdjustModal] = useState(false)
 
-  const completeIds = teamQueue.filter(id => {
-    const t = teams.find(t => t.id === id)
-    return t && t.complete
-  })
-  const nextTeamA = teams.find(t => t.id === completeIds[0])
-  const nextTeamB = teams.find(t => t.id === completeIds[1])
-  const canNext   = completeIds.length >= 2
+  const nextableIds = teamQueue.filter(id => (teams.find(t => t.id === id)?.players.length ?? 0) > 0)
+  const nextTeamA = teams.find(t => t.id === nextableIds[0])
+  const nextTeamB = teams.find(t => t.id === nextableIds[1])
+  const canNext   = nextableIds.length >= 2
 
   // Players from waiting teams (not in next match)
   const waitingPlayers = waitingTeams.flatMap(team =>
