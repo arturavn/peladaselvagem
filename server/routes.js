@@ -273,11 +273,11 @@ router.post('/actions/select-winner', async (req, res) => {
       }
     }
 
-    // 6. Spreadsheet rotation: fill the last incomplete tail team from the loser.
-    //    Only fills positions 2+ (never the two teams about to play).
+    // 6. Spreadsheet rotation: fill the last incomplete team (not winner, not loser) from loser.
     //    Loser's first N players complete the tail; remaining loser players become new tail.
-    const lastIncompleteId = [...newQueue].slice(2).reverse().find(id => {
+    const lastIncompleteId = [...newQueue].reverse().find(id => {
       if (id === loserId) return false
+      if (id === winnerTeamId) return false
       const t = teams.find(t => t.id === id)
       return t && t.players.length > 0 && t.players.length < TEAM_SIZE
     })
@@ -390,9 +390,10 @@ router.post('/actions/resolve-empate', async (req, res) => {
       }
     }
 
-    // Spreadsheet rotation: fill last incomplete tail from loser (positions 2+ only)
-    const lastIncompleteIdE = [...newQueue].slice(2).reverse().find(id => {
+    // Spreadsheet rotation: fill last incomplete team (not winner, not loser) from loser
+    const lastIncompleteIdE = [...newQueue].reverse().find(id => {
       if (id === loserId) return false
+      if (id === coinTossWinnerId) return false
       const t = teams.find(t => t.id === id)
       return t && t.players.length > 0 && t.players.length < TEAM_SIZE
     })
@@ -467,12 +468,8 @@ router.post('/actions/resolve-empate-swap', async (req, res) => {
       }
     }
 
-    // Waiting teams sorted: complete first, incomplete last
-    const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
-    const rest = [
-      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return t && t.complete }),
-      ...restRaw.filter(id => { const t = teams.find(t => t.id === id); return !t || !t.complete }),
-    ]
+    // Waiting teams in original queue order (no re-sort)
+    const rest = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
 
     // Coin-toss winner gets queue priority over the loser
     const otherId = priorityTeamId === teamAId ? teamBId : teamAId
@@ -565,23 +562,52 @@ router.post('/actions/remove-match-player', async (req, res) => {
       }
     }
 
-    // If player continues, add them back to the first incomplete waiting team (or new team)
+    // Cascade refill: donor team lost a player → pull from next team in queue, propagating gap to tail
+    if (substitution) {
+      let currentId = substitution.fromTeamId
+      while (true) {
+        const currentTeam = state.teams.find(t => t.id === currentId)
+        if (!currentTeam || currentTeam.players.length >= TEAM_SIZE) break
+        const waitingNow = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
+        const currentIdx = waitingNow.indexOf(currentId)
+        if (currentIdx === -1 || currentIdx === waitingNow.length - 1) break
+        const nextId = waitingNow[currentIdx + 1]
+        const nextTeam = state.teams.find(t => t.id === nextId)
+        if (!nextTeam || nextTeam.players.length === 0) break
+        const refillPlayer = nextTeam.players[0]
+        const nextTeamNew = nextTeam.players.filter(p => p !== refillPlayer)
+        state.teams = state.teams.map(t => {
+          if (t.id === currentId) {
+            const players = [...t.players, refillPlayer]
+            return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
+          }
+          if (t.id === nextId) {
+            return { ...t, players: nextTeamNew, captain: nextTeamNew[0] ?? null, complete: nextTeamNew.length >= TEAM_SIZE }
+          }
+          return t
+        })
+        if (nextTeamNew.length === 0) {
+          state.teams = state.teams.filter(t => t.id !== nextId)
+          state.teamQueue = state.teamQueue.filter(id => id !== nextId)
+        }
+        currentId = nextId
+      }
+    }
+
+    // If player continues, add them to the last waiting team (tail)
     if (continues) {
       const playingIds = [teamAId, teamBId]
       const waitingQueueIds = state.teamQueue.filter(id => !playingIds.includes(id))
-      const firstIncompleteId = waitingQueueIds.find(id => {
-        const t = state.teams.find(t => t.id === id)
-        return t && t.players.length < TEAM_SIZE
-      }) ?? null
+      const lastId = waitingQueueIds[waitingQueueIds.length - 1]
+      const lastTeam = lastId ? state.teams.find(t => t.id === lastId) : null
 
-      if (firstIncompleteId) {
+      if (lastTeam && lastTeam.players.length < TEAM_SIZE) {
         state.teams = state.teams.map(t => {
-          if (t.id !== firstIncompleteId) return t
+          if (t.id !== lastId) return t
           const players = [...t.players, playerName]
           return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
         })
       } else {
-        // Create new team at the end
         const newIdx = state.teams.length
         const newTeam = {
           id: `team-${newIdx}`,
@@ -594,11 +620,6 @@ router.post('/actions/remove-match-player', async (req, res) => {
         state.teams = [...state.teams, newTeam]
         state.teamQueue = [...state.teamQueue, newTeam.id]
       }
-
-      // Re-sort queue: complete first, incomplete last (preserve playing teams at front)
-      const complete   = state.teamQueue.filter(id => { const t = state.teams.find(t => t.id === id); return t && t.complete })
-      const incomplete = state.teamQueue.filter(id => { const t = state.teams.find(t => t.id === id); return t && !t.complete })
-      state.teamQueue = [...complete, ...incomplete]
     }
 
     // Pause timer
@@ -708,29 +729,19 @@ router.post('/actions/add-late-player', async (req, res) => {
       ? [state.activeMatch.teamAId, state.activeMatch.teamBId]
       : []
 
-    // Find first incomplete team in waiting queue (not currently playing)
+    // Late players always go to the last waiting team (tail)
     const waitingQueueIds = state.teamQueue.filter(id => !playingIds.includes(id))
-    const firstIncompleteWaitingId = waitingQueueIds.find(id => {
-      const t = state.teams.find(t => t.id === id)
-      return t && t.players.length < TEAM_SIZE
-    }) ?? null
+    const lastId = waitingQueueIds[waitingQueueIds.length - 1]
+    const lastTeam = lastId ? state.teams.find(t => t.id === lastId) : null
 
-    if (firstIncompleteWaitingId) {
-      // Add player to the first incomplete waiting team (closest to playing)
+    if (lastTeam && lastTeam.players.length < TEAM_SIZE) {
       state.teams = state.teams.map(t => {
-        if (t.id === firstIncompleteWaitingId) {
-          const newPlayers = [...t.players, n]
-          return {
-            ...t,
-            players: newPlayers,
-            captain: newPlayers[0],
-            complete: newPlayers.length >= TEAM_SIZE,
-          }
-        }
-        return t
+        if (t.id !== lastId) return t
+        const newPlayers = [...t.players, n]
+        return { ...t, players: newPlayers, captain: newPlayers[0], complete: newPlayers.length >= TEAM_SIZE }
       })
     } else {
-      // Create a new team at the end
+      // No incomplete tail — create new team at end
       const newIdx = state.teams.length
       const newTeam = {
         id: `team-${newIdx}`,
@@ -743,17 +754,6 @@ router.post('/actions/add-late-player', async (req, res) => {
       state.teams = [...state.teams, newTeam]
       state.teamQueue = [...state.teamQueue, newTeam.id]
     }
-
-    // Reorganize queue: complete teams first, incomplete at end
-    const complete = state.teamQueue.filter(id => {
-      const t = state.teams.find(t => t.id === id)
-      return t && t.complete
-    })
-    const incomplete = state.teamQueue.filter(id => {
-      const t = state.teams.find(t => t.id === id)
-      return t && !t.complete
-    })
-    state.teamQueue = [...complete, ...incomplete]
 
     await saveState(state)
     res.json({ state })
