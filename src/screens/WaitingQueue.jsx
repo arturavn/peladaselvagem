@@ -103,8 +103,8 @@ function WinnerBanner({ winner }) {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '14px 16px',
-      background: 'rgba(255,85,0,0.06)',
-      border: '1px solid rgba(255,85,0,0.25)',
+      background: 'rgba(0,230,77,0.06)',
+      border: '1px solid rgba(0,230,77,0.25)',
       borderRadius: 'var(--radius)',
     }}>
       <span style={{ fontSize: 22 }}>🏆</span>
@@ -197,8 +197,8 @@ function LatePlayerInput({ onAdd, allPlayers = [] }) {
   return (
     <div style={{
       padding: '14px 16px',
-      background: 'rgba(255,85,0,0.03)',
-      border: '1px solid rgba(255,85,0,0.12)',
+      background: 'rgba(0,230,77,0.03)',
+      border: '1px solid rgba(0,230,77,0.12)',
       borderRadius: 'var(--radius)',
       display: 'flex',
       flexDirection: 'column',

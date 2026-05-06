@@ -7,9 +7,9 @@
   --surface: #121212;
   --surface-2: #181818;
   --surface-3: #1e1e1e;
-  --accent: #FF5500;
-  --accent-dark: #E04A00;
-  --accent-dim: rgba(255, 85, 0, 0.14);
+  --accent: #00E64D;
+  --accent-dark: #00CC44;
+  --accent-dim: rgba(0, 230, 77, 0.14);
   --danger: #FF3030;
   --danger-dim: rgba(255, 48, 48, 0.15);
   --warning: #FFD000;
@@ -18,10 +18,10 @@
   --text-2: #888888;
   --text-3: #4A4A4A;
   --border: rgba(255, 255, 255, 0.07);
-  --border-active: rgba(255, 85, 0, 0.5);
-  --glow-sm: 0 0 10px rgba(255, 85, 0, 0.4);
-  --glow: 0 0 20px rgba(255, 85, 0, 0.5);
-  --glow-lg: 0 0 36px rgba(255, 85, 0, 0.55), 0 0 72px rgba(255, 85, 0, 0.18);
+  --border-active: rgba(0, 230, 77, 0.5);
+  --glow-sm: 0 0 10px rgba(0, 230, 77, 0.4);
+  --glow: 0 0 20px rgba(0, 230, 77, 0.5);
+  --glow-lg: 0 0 36px rgba(0, 230, 77, 0.55), 0 0 72px rgba(0, 230, 77, 0.18);
   --glow-danger: 0 0 16px rgba(255, 48, 48, 0.5);
   --font-display: 'Bebas Neue', 'Oswald', Impact, sans-serif;
   --font-body: 'DM Sans', 'Sora', system-ui, sans-serif;
