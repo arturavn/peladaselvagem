@@ -364,15 +364,31 @@ router.post('/actions/resolve-empate', async (req, res) => {
       ...(teamBAfter?.players?.length > 0 ? [teamBId] : []),
     ]
 
-    // Spreadsheet rotation: fill last incomplete waiting team from teamB (the last team, like a loser).
-    const lastIncompleteId = [...newQueue].reverse().find(id => {
+    // Spreadsheet rotation — two passes (teamA first, then teamB):
+    // Pass 1: teamA donates to the last incomplete waiting team (not teamA, not teamB)
+    const lastIncompleteA = [...newQueue].reverse().find(id => {
       if (id === teamAId) return false
       if (id === teamBId) return false
       const t = teams.find(t => t.id === id)
       return t && t.players.length > 0 && t.players.length < TEAM_SIZE
     })
-    if (lastIncompleteId) {
-      teams = fillIncompleteFromLoser(teams, lastIncompleteId, teamBId)
+    if (lastIncompleteA) {
+      teams = fillIncompleteFromLoser(teams, lastIncompleteA, teamAId)
+      const teamANow = teams.find(t => t.id === teamAId)
+      if (!teamANow || teamANow.players.length === 0) {
+        teams = teams.filter(t => t.id !== teamAId)
+        newQueue = newQueue.filter(id => id !== teamAId)
+      }
+    }
+
+    // Pass 2: teamB donates to the last incomplete waiting team (not teamB — teamA is now fair game)
+    const lastIncompleteB = [...newQueue].reverse().find(id => {
+      if (id === teamBId) return false
+      const t = teams.find(t => t.id === id)
+      return t && t.players.length > 0 && t.players.length < TEAM_SIZE
+    })
+    if (lastIncompleteB) {
+      teams = fillIncompleteFromLoser(teams, lastIncompleteB, teamBId)
       const teamBNow = teams.find(t => t.id === teamBId)
       if (!teamBNow || teamBNow.players.length === 0) {
         teams = teams.filter(t => t.id !== teamBId)
