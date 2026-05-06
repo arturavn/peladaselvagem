@@ -7,12 +7,12 @@ import ConfirmActionModal from './ConfirmActionModal'
 
 function DecoRects() {
   const rects = [
-    { top: '8%',  left: '6%',  w: 8,  h: 24, rot: 15,  color: 'rgba(255,85,0,0.15)' },
+    { top: '8%',  left: '6%',  w: 8,  h: 24, rot: 15,  color: 'rgba(0,230,77,0.15)' },
     { top: '12%', right: '8%', w: 6,  h: 18, rot: -20, color: 'rgba(245,196,0,0.15)' },
-    { top: '5%',  left: '40%', w: 5,  h: 14, rot: 35,  color: 'rgba(255,85,0,0.1)'  },
+    { top: '5%',  left: '40%', w: 5,  h: 14, rot: 35,  color: 'rgba(0,230,77,0.1)'  },
     { top: '20%', right: '4%', w: 4,  h: 20, rot: -10, color: 'rgba(255,255,255,0.06)' },
     { top: '3%',  left: '20%', w: 7,  h: 10, rot: 55,  color: 'rgba(245,196,0,0.1)'  },
-    { top: '15%', left: '55%', w: 5,  h: 16, rot: -30, color: 'rgba(255,85,0,0.08)' },
+    { top: '15%', left: '55%', w: 5,  h: 16, rot: -30, color: 'rgba(0,230,77,0.08)' },
     { top: '25%', left: '12%', w: 4,  h: 12, rot: 40,  color: 'rgba(255,255,255,0.05)' },
   ]
 
@@ -199,7 +199,7 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
       }}>
         <div style={{
           background: '#0E0E0E',
-          borderTop: '1px solid rgba(255,85,0,0.2)',
+          borderTop: '1px solid rgba(0,230,77,0.2)',
           borderRadius: '16px 16px 0 0',
           padding: '28px 24px',
           paddingBottom: 'calc(28px + 60px + var(--safe-bottom))',
@@ -329,7 +329,7 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
               fontSize: 9,
               fontWeight: 600,
               letterSpacing: '0.1em',
-              color: 'rgba(255,85,0,0.4)',
+              color: 'rgba(0,230,77,0.4)',
             }}>
               TACTICAL INTERFACE V2.0
             </span>

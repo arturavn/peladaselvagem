@@ -70,7 +70,7 @@ export default function MatchStartAnimation({ teamA, teamB, onComplete }) {
         {/* Radial glow atmosphere */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse 90% 55% at center, rgba(255,85,0,0.13) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse 90% 55% at center, rgba(0,230,77,0.13) 0%, transparent 70%)',
           animation: 'msa-bgpulse 2.6s 0.4s ease-out both',
         }} />
 
@@ -91,7 +91,7 @@ export default function MatchStartAnimation({ teamA, teamB, onComplete }) {
         {/* Scan line */}
         <div style={{
           position: 'absolute', width: '100%', height: 1, pointerEvents: 'none',
-          background: 'linear-gradient(to right, transparent, rgba(255,85,0,0.5), transparent)',
+          background: 'linear-gradient(to right, transparent, rgba(0,230,77,0.5), transparent)',
           animation: 'msa-scan 1.4s 0.05s linear both',
           zIndex: 1,
         }} />
@@ -99,7 +99,7 @@ export default function MatchStartAnimation({ teamA, teamB, onComplete }) {
         {/* Flash on COMEÇOU */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'rgba(255,85,0,0.22)',
+          background: 'rgba(0,230,77,0.22)',
           animation: 'msa-flash 0.65s 1.22s ease-out both',
           zIndex: 2,
         }} />
@@ -136,8 +136,8 @@ export default function MatchStartAnimation({ teamA, teamB, onComplete }) {
           }}>
             <div style={{
               fontFamily: 'var(--font-display)', fontSize: 18,
-              color: '#FF5500', letterSpacing: '0.12em',
-              textShadow: '0 0 20px rgba(255,85,0,1), 0 0 55px rgba(255,85,0,0.6)',
+              color: '#00E64D', letterSpacing: '0.12em',
+              textShadow: '0 0 20px rgba(0,230,77,1), 0 0 55px rgba(0,230,77,0.6)',
             }}>VS</div>
           </div>
 
@@ -168,8 +168,8 @@ export default function MatchStartAnimation({ teamA, teamB, onComplete }) {
         }}>
           <div style={{
             fontFamily: 'var(--font-display)', fontSize: 58,
-            letterSpacing: '0.08em', color: '#FF5500', lineHeight: 1,
-            textShadow: '0 0 35px rgba(255,85,0,1), 0 0 90px rgba(255,85,0,0.55)',
+            letterSpacing: '0.08em', color: '#00E64D', lineHeight: 1,
+            textShadow: '0 0 35px rgba(0,230,77,1), 0 0 90px rgba(0,230,77,0.55)',
           }}>COMEÇOU!</div>
         </div>
       </div>
