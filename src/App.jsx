@@ -126,15 +126,9 @@ export default function App() {
     setState(data.state)
   }, [])
 
-  /* Resolve empate — coin toss */
-  const resolveEmpate = useCallback(async (coinTossWinnerId) => {
-    const data = await api.resolveEmpate(coinTossWinnerId)
-    setState(data.state)
-  }, [])
-
-  /* Resolve empate — swap (both teams out, coin-toss winner gets priority) */
-  const resolveEmpateSwap = useCallback(async (priorityTeamId) => {
-    const data = await api.resolveEmpateSwap(priorityTeamId)
+  /* Resolve empate — both teams go to back of queue, list rotates normally */
+  const resolveEmpate = useCallback(async () => {
+    const data = await api.resolveEmpate()
     setState(data.state)
   }, [])
 
@@ -238,14 +232,6 @@ export default function App() {
     .filter(id => !playingIds.includes(id))
     .map(getTeam)
     .filter(Boolean)
-
-  // Count waiting teams that are (or will be) complete after sub returns
-  // Substitutions temporarily deplete waiting teams; players are returned on select-winner
-  const pendingSubs = state.activeMatch?.substitutions ?? []
-  const waitingCompleteCount = waitingTeams.filter(t => {
-    const returned = pendingSubs.filter(s => s.fromTeamId === t.id).length
-    return (t.players.length + returned) >= 5
-  }).length
 
   /* Active match teams for passing to screens */
   const matchTeamA = state.activeMatch ? getTeam(state.activeMatch.teamAId) : null
@@ -391,8 +377,6 @@ export default function App() {
           teamB={matchTeamB}
           onSelect={selectWinner}
           onEmpate={resolveEmpate}
-          onEmpateSwap={resolveEmpateSwap}
-          waitingCompleteCount={waitingCompleteCount}
         />
       )}
     </div>

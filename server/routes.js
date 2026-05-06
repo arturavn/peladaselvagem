@@ -313,126 +313,11 @@ router.post('/actions/select-winner', async (req, res) => {
   }
 })
 
-/* ── POST /api/actions/resolve-empate ──────────────────── */
+/* ── POST /api/actions/resolve-empate ─────────────────────── */
+// Both playing teams leave and go to the back of the queue (PRETO first, then AMARELO).
+// No coin toss — the list rotates normally.
 router.post('/actions/resolve-empate', async (req, res) => {
   try {
-    const { coinTossWinnerId } = req.body
-    if (!coinTossWinnerId) return res.status(400).json({ error: 'coinTossWinnerId is required' })
-
-    const state = await getState()
-
-    let teams = [...state.teams]
-    const { teamAId, teamBId } = state.activeMatch
-    const loserId = coinTossWinnerId === teamAId ? teamBId : teamAId
-
-    // Handle substitutions based on outcome:
-    //   • Sub won  → earned their spot, stays with coin-toss winner (no change)
-    //   • Sub lost → removed from loser, goes to front of original team (first in line)
-    //     If original team is already full, displace the last player to the loser team.
-    const subs = state.activeMatch.substitutions ?? []
-    for (const sub of subs) {
-      if (sub.toTeamId !== loserId) continue  // sub is on winning team → keep them there
-
-      let overflowPlayer = null
-      teams = teams.map(t => {
-        if (t.id === loserId) {
-          const players = t.players.filter(p => p !== sub.player)
-          return { ...t, players, captain: players[0] ?? null, complete: players.length >= TEAM_SIZE }
-        }
-        if (t.id === sub.fromTeamId) {
-          const players = [sub.player, ...t.players]
-          if (players.length > TEAM_SIZE) {
-            overflowPlayer = players[players.length - 1]
-            return { ...t, players: players.slice(0, TEAM_SIZE), captain: players[0], complete: true }
-          }
-          return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
-        }
-        return t
-      })
-
-      if (overflowPlayer) {
-        teams = teams.map(t => {
-          if (t.id !== loserId) return t
-          const players = [...t.players, overflowPlayer]
-          return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
-        })
-      }
-
-      if (!teams.find(t => t.id === sub.fromTeamId)) {
-        const playingIds2 = [teamAId, teamBId]
-        const firstIncompleteWaiting = state.teamQueue
-          .filter(id => !playingIds2.includes(id))
-          .find(id => { const t = teams.find(t => t.id === id); return t && t.players.length < TEAM_SIZE })
-        if (firstIncompleteWaiting) {
-          teams = teams.map(t => {
-            if (t.id !== firstIncompleteWaiting) return t
-            const players = [sub.player, ...t.players]
-            return { ...t, players, captain: players[0], complete: players.length >= TEAM_SIZE }
-          })
-        }
-      }
-    }
-
-    const restRaw = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
-    const rest = [...restRaw]
-
-    const loserAfter = teams.find(t => t.id === loserId)
-    const loserHasPlayers = loserAfter && loserAfter.players.length > 0
-
-    let newQueue
-    if (coinTossWinnerId === teamAId) {
-      newQueue = [teamAId, ...rest, ...(loserHasPlayers ? [loserId] : [])]
-    } else {
-      if (rest.length > 0) {
-        newQueue = [rest[0], teamBId, ...rest.slice(1), ...(loserHasPlayers ? [loserId] : [])]
-      } else {
-        newQueue = [loserId, teamBId]
-      }
-    }
-
-    // Spreadsheet rotation: fill last incomplete team (not winner, not loser) from loser
-    const lastIncompleteIdE = [...newQueue].reverse().find(id => {
-      if (id === loserId) return false
-      if (id === coinTossWinnerId) return false
-      const t = teams.find(t => t.id === id)
-      return t && t.players.length > 0 && t.players.length < TEAM_SIZE
-    })
-    if (lastIncompleteIdE) {
-      teams = fillIncompleteFromLoser(teams, lastIncompleteIdE, loserId)
-      const loserNowE = teams.find(t => t.id === loserId)
-      if (!loserNowE || loserNowE.players.length === 0) {
-        teams = teams.filter(t => t.id !== loserId)
-        newQueue = newQueue.filter(id => id !== loserId)
-      }
-    }
-
-    // Consolidate any remaining fragmented incomplete waiting teams
-    const consolidatedE = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1], loserId].filter(Boolean))
-    teams = consolidatedE.teams
-    newQueue = consolidatedE.teamQueue
-
-    state.teams = teams
-    state.teamQueue = newQueue
-    state.activeMatch = null
-    state.showEndModal = false
-    state.lastWinnerId = null
-    state.screen = 'queue'
-    state.navDir = 'forward'
-
-    await saveState(state)
-    res.json({ state })
-  } catch (e) {
-    console.error('POST /actions/resolve-empate error:', e)
-    res.status(500).json({ error: e.message })
-  }
-})
-
-/* ── POST /api/actions/resolve-empate-swap ─────────────── */
-// Called when empate AND 2+ complete teams are waiting:
-// both playing teams leave, coin-toss winner gets queue priority.
-router.post('/actions/resolve-empate-swap', async (req, res) => {
-  try {
-    const { priorityTeamId } = req.body
     const state = await getState()
     const { teamAId, teamBId } = state.activeMatch
 
@@ -468,24 +353,21 @@ router.post('/actions/resolve-empate-swap', async (req, res) => {
       }
     }
 
-    // Waiting teams in original queue order (no re-sort)
+    // Both teams go to the back: PRETO (teamA) first, then AMARELO (teamB)
     const rest = state.teamQueue.filter(id => id !== teamAId && id !== teamBId)
-
-    // Coin-toss winner gets queue priority over the loser
-    const otherId = priorityTeamId === teamAId ? teamBId : teamAId
-    const priorityAfter = teams.find(t => t.id === priorityTeamId)
-    const otherAfter    = teams.find(t => t.id === otherId)
+    const teamAAfter = teams.find(t => t.id === teamAId)
+    const teamBAfter = teams.find(t => t.id === teamBId)
 
     let newQueue = [
       ...rest,
-      ...(priorityAfter?.players?.length > 0 ? [priorityTeamId] : []),
-      ...(otherAfter?.players?.length > 0    ? [otherId]         : []),
+      ...(teamAAfter?.players?.length > 0 ? [teamAId] : []),
+      ...(teamBAfter?.players?.length > 0 ? [teamBId] : []),
     ]
 
     // Consolidate fragmented incomplete waiting teams
-    const consolidatedS = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1]].filter(Boolean))
-    teams = consolidatedS.teams
-    newQueue = consolidatedS.teamQueue
+    const consolidated = consolidateWaitingTeams(teams, newQueue, [newQueue[0], newQueue[1]].filter(Boolean))
+    teams = consolidated.teams
+    newQueue = consolidated.teamQueue
 
     state.teams = teams
     state.teamQueue = newQueue
@@ -498,7 +380,7 @@ router.post('/actions/resolve-empate-swap', async (req, res) => {
     await saveState(state)
     res.json({ state })
   } catch (e) {
-    console.error('POST /actions/resolve-empate-swap error:', e)
+    console.error('POST /actions/resolve-empate error:', e)
     res.status(500).json({ error: e.message })
   }
 })

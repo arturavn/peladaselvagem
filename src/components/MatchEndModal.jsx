@@ -2,7 +2,6 @@ import { useState } from 'react'
 import Confetti from './Confetti'
 import { TEAM_ROLE, getInitials } from './BottomNav'
 import ConfirmActionModal from './ConfirmActionModal'
-import CoinTossModal from './CoinTossModal'
 
 /* ── Decorative confetti rectangles (background) ─────────── */
 
@@ -39,7 +38,7 @@ function DecoRects() {
   )
 }
 
-/* ── Winner / sorteio button ────────────────────────────────── */
+/* ── Winner button ──────────────────────────────────────────── */
 
 function WinnerBtn({ role, team, isSelected, onClick }) {
   const r = TEAM_ROLE[role]
@@ -149,28 +148,21 @@ function WinnerBtn({ role, team, isSelected, onClick }) {
 
 /* ── Main component ──────────────────────────────────────── */
 
-export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpateSwap, waitingCompleteCount = 0 }) {
+export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate }) {
   const [selected, setSelected] = useState(null)
   const [confirming, setConfirming] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
-  const [empateMode, setEmpateMode] = useState(false)      // coin toss (< 2 waiting)
-  const [empateSwapMode, setEmpateSwapMode] = useState(false) // swap (2+ waiting)
-  const [pendingConfirm, setPendingConfirm] = useState(false) // winner confirm overlay
-  const [showCoinToss, setShowCoinToss] = useState(false)    // coin toss modal
+  const [pendingWinner, setPendingWinner] = useState(false)
+  const [pendingEmpate, setPendingEmpate] = useState(false)
 
-  const executeConfirm = async () => {
-    setPendingConfirm(false)
-    if (confirming) return
-    if (!selected) return
+  const executeWinner = async () => {
+    setPendingWinner(false)
+    if (confirming || !selected) return
     setConfirming(true)
     try {
-      if (empateMode) {
-        await onEmpate(selected.id)
-      } else {
-        setShowConfetti(true)
-        await new Promise(r => setTimeout(r, 800))
-        await onSelect(selected.id)
-      }
+      setShowConfetti(true)
+      await new Promise(r => setTimeout(r, 800))
+      await onSelect(selected.id)
     } catch (e) {
       console.error('confirm error:', e)
       setConfirming(false)
@@ -178,27 +170,15 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
     }
   }
 
-  const handleCoinResult = async (priorityTeamId) => {
-    setShowCoinToss(false)
-    setConfirming(true)
-    try { await onEmpateSwap(priorityTeamId) }
-    catch (e) { console.error(e); setConfirming(false) }
-  }
-
-  const handleConfirm = () => {
+  const executeEmpate = async () => {
+    setPendingEmpate(false)
     if (confirming) return
-    // Swap mode → open coin toss modal
-    if (empateSwapMode) { setShowCoinToss(true); return }
-    if (!selected) return
-    setPendingConfirm(true)
-  }
-
-  const handleEmpate = () => {
-    setSelected(null)
-    if (waitingCompleteCount >= 2) {
-      setEmpateSwapMode(true)
-    } else {
-      setEmpateMode(true)
+    setConfirming(true)
+    try {
+      await onEmpate()
+    } catch (e) {
+      console.error('empate error:', e)
+      setConfirming(false)
     }
   }
 
@@ -219,213 +199,101 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
       }}>
         <div style={{
           background: '#0E0E0E',
-          borderTop: `1px solid ${(empateMode || empateSwapMode) ? 'rgba(255,149,0,0.3)' : 'rgba(255,85,0,0.2)'}`,
+          borderTop: '1px solid rgba(255,85,0,0.2)',
           borderRadius: '16px 16px 0 0',
           padding: '28px 24px',
           paddingBottom: 'calc(28px + 60px + var(--safe-bottom))',
           position: 'relative',
           animation: 'modalIn 0.32s cubic-bezier(0.25,0.46,0.45,0.94) both',
-          transition: 'border-color 0.3s ease',
         }}>
           {/* Decorative background rects */}
           <DecoRects />
 
-          {/* ── Empate swap mode header ── */}
-          {empateSwapMode && (
-            <div style={{ marginBottom: 24, position: 'relative' }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '4px 12px',
-                background: 'rgba(255,149,0,0.1)',
-                border: '1px solid rgba(255,149,0,0.3)',
-                borderRadius: 20, marginBottom: 12,
-              }}>
-                <div style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: 'var(--warning)',
-                  boxShadow: '0 0 6px var(--warning)',
-                }} />
-                <span style={{
-                  fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700,
-                  letterSpacing: '0.14em', color: 'var(--warning)', textTransform: 'uppercase',
-                }}>
-                  EMPATE TÉCNICO
-                </span>
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-display)', fontSize: 34,
-                letterSpacing: '0.04em', lineHeight: 1, color: '#F0F0F0', marginBottom: 8,
-              }}>
-                OS DOIS TIMES<br />
-                <span style={{ color: 'var(--warning)' }}>SAEM DA FILA</span>
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-body)', fontSize: 11,
-                color: 'var(--text-3)', fontWeight: 500, lineHeight: 1.5,
-              }}>
-                Há {waitingCompleteCount} {waitingCompleteCount === 1 ? 'time' : 'times'} esperando.
-                Os próximos dois times da fila entram em campo.
-              </div>
+          {/* Header */}
+          <div style={{ marginBottom: 24, position: 'relative' }}>
+            <div style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'var(--accent)',
+              opacity: 0.8,
+              marginBottom: 6,
+            }}>
+              Partida finalizada
             </div>
-          )}
-
-          {/* ── Normal mode header ── */}
-          {!empateMode && !empateSwapMode && (
-            <div style={{ marginBottom: 24, position: 'relative' }}>
-              <div style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: 'var(--accent)',
-                opacity: 0.8,
-                marginBottom: 6,
-              }}>
-                Partida finalizada
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 42,
-                letterSpacing: '0.04em',
-                lineHeight: 1,
-              }}>
-                <span style={{ color: '#F0F0F0' }}>QUEM </span>
-                <span style={{ color: 'var(--accent)' }}>GANHOU?</span>
-              </div>
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 42,
+              letterSpacing: '0.04em',
+              lineHeight: 1,
+            }}>
+              <span style={{ color: '#F0F0F0' }}>QUEM </span>
+              <span style={{ color: 'var(--accent)' }}>GANHOU?</span>
             </div>
-          )}
+          </div>
 
-          {/* ── Empate mode header ── */}
-          {empateMode && (
-            <div style={{ marginBottom: 24, position: 'relative' }}>
-              {/* AGUARDANDO SORTEIO chip */}
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '4px 12px',
-                background: 'rgba(255,149,0,0.1)',
-                border: '1px solid rgba(255,149,0,0.3)',
-                borderRadius: 20,
-                marginBottom: 12,
-              }}>
-                <div style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: 'var(--warning)',
-                  boxShadow: '0 0 6px var(--warning)',
-                  animation: 'timerPulse 1s ease-in-out infinite',
-                }} />
-                <span style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: '0.14em',
-                  color: 'var(--warning)',
-                  textTransform: 'uppercase',
-                }}>
-                  AGUARDANDO SORTEIO
-                </span>
-              </div>
+          {/* Team buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, position: 'relative' }}>
+            {teamA && (
+              <WinnerBtn
+                role="preto"
+                team={teamA}
+                isSelected={selected?.id === teamA.id}
+                onClick={() => !confirming && setSelected(teamA)}
+              />
+            )}
+            {teamB && (
+              <WinnerBtn
+                role="amarelo"
+                team={teamB}
+                isSelected={selected?.id === teamB.id}
+                onClick={() => !confirming && setSelected(teamB)}
+              />
+            )}
+          </div>
 
-              <div style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 34,
-                letterSpacing: '0.04em',
-                lineHeight: 1,
-                color: '#F0F0F0',
-                marginBottom: 6,
-              }}>
-                SELECIONE O<br />
-                <span style={{ color: 'var(--warning)' }}>VENCEDOR</span>
-              </div>
-
-              <div style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 11,
-                color: 'var(--text-3)',
-                fontWeight: 500,
-                marginTop: 6,
-              }}>
-                Quem ganhou o sorteio? O time escolhido começa como{' '}
-                <span style={{ color: '#AAAAAA', fontWeight: 600 }}>TIME PRETO</span>.
-              </div>
-            </div>
-          )}
-
-          {/* Team buttons — hidden in swap mode */}
-          {!empateSwapMode && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, position: 'relative' }}>
-              {teamA && (
-                <WinnerBtn
-                  role="preto"
-                  team={teamA}
-                  isSelected={selected?.id === teamA.id}
-                  onClick={() => !confirming && setSelected(teamA)}
-                />
-              )}
-              {teamB && (
-                <WinnerBtn
-                  role="amarelo"
-                  team={teamB}
-                  isSelected={selected?.id === teamB.id}
-                  onClick={() => !confirming && setSelected(teamB)}
-                />
-              )}
-            </div>
-          )}
-
-          {/* Empate button — only in normal mode */}
-          {!empateMode && !empateSwapMode && (
-            <button
-              onClick={handleEmpate}
-              style={{
-                width: '100%',
-                height: 40,
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 'var(--radius)',
-                color: 'var(--text-3)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: '0.06em',
-                cursor: 'pointer',
-                marginBottom: 14,
-                transition: 'all 0.15s ease',
-                position: 'relative',
-              }}
-            >
-              SEM VENCEDORES / EMPATE TÉCNICO
-            </button>
-          )}
-
-          {/* Spacing in empate/swap mode */}
-          {(empateMode || empateSwapMode) && <div style={{ height: empateSwapMode ? 24 : 14 }} />}
-
-          {/* Confirm button */}
+          {/* Empate button */}
           <button
-            onClick={handleConfirm}
-            disabled={(!empateSwapMode && !selected) || confirming}
+            onClick={() => !confirming && setPendingEmpate(true)}
+            style={{
+              width: '100%',
+              height: 40,
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 'var(--radius)',
+              color: 'var(--text-3)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              cursor: confirming ? 'not-allowed' : 'pointer',
+              marginBottom: 14,
+              transition: 'all 0.15s ease',
+              position: 'relative',
+            }}
+          >
+            SEM VENCEDORES / EMPATE TÉCNICO
+          </button>
+
+          {/* Confirm winner button */}
+          <button
+            onClick={() => !confirming && selected && setPendingWinner(true)}
+            disabled={!selected || confirming}
             style={{
               width: '100%',
               height: 54,
-              background: (empateSwapMode || selected) && !confirming
-                ? 'var(--warning)'
-                : 'rgba(255,255,255,0.06)',
+              background: selected && !confirming ? 'var(--warning)' : 'rgba(255,255,255,0.06)',
               border: 'none',
               borderRadius: 'var(--radius)',
               fontFamily: 'var(--font-display)',
               fontSize: 19,
               letterSpacing: '0.1em',
-              color: (empateSwapMode || selected) && !confirming ? '#080808' : 'var(--text-3)',
-              cursor: (empateSwapMode || selected) && !confirming ? 'pointer' : 'not-allowed',
+              color: selected && !confirming ? '#080808' : 'var(--text-3)',
+              cursor: selected && !confirming ? 'pointer' : 'not-allowed',
               transition: 'all 0.2s ease',
-              boxShadow: (empateSwapMode || selected) && !confirming
-                ? '0 0 12px rgba(255,149,0,0.35)'
-                : 'none',
+              boxShadow: selected && !confirming ? '0 0 12px rgba(255,149,0,0.35)' : 'none',
               position: 'relative',
             }}
           >
@@ -433,8 +301,7 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
               ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <span className="loading-ball">⚽</span> CONFIRMANDO…
                 </span>
-              : empateSwapMode ? 'CONFIRMAR — TROCAR TIMES'
-              : empateMode ? 'CONFIRMAR SORTEIO' : 'CONFIRMAR VENCEDOR'
+              : 'CONFIRMAR VENCEDOR'
             }
           </button>
 
@@ -462,8 +329,7 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
               fontSize: 9,
               fontWeight: 600,
               letterSpacing: '0.1em',
-              color: (empateMode || empateSwapMode) ? 'rgba(255,149,0,0.4)' : 'rgba(255,85,0,0.4)',
-              transition: 'color 0.3s ease',
+              color: 'rgba(255,85,0,0.4)',
             }}>
               TACTICAL INTERFACE V2.0
             </span>
@@ -471,23 +337,19 @@ export default function MatchEndModal({ teamA, teamB, onSelect, onEmpate, onEmpa
         </div>
       </div>
 
-      {pendingConfirm && (
+      {pendingWinner && (
         <ConfirmActionModal
-          message={
-            empateMode ? `SORTEIO: ${selected?.captain?.toUpperCase()}?`
-                       : `VENCEDOR: ${selected?.captain?.toUpperCase()}?`
-          }
-          onConfirm={executeConfirm}
-          onCancel={() => setPendingConfirm(false)}
+          message={`VENCEDOR: ${selected?.captain?.toUpperCase()}?`}
+          onConfirm={executeWinner}
+          onCancel={() => setPendingWinner(false)}
         />
       )}
 
-      {showCoinToss && (
-        <CoinTossModal
-          teamA={teamA}
-          teamB={teamB}
-          onResult={handleCoinResult}
-          onCancel={() => setShowCoinToss(false)}
+      {pendingEmpate && (
+        <ConfirmActionModal
+          message="EMPATE — OS DOIS TIMES SAEM?"
+          onConfirm={executeEmpate}
+          onCancel={() => setPendingEmpate(false)}
         />
       )}
     </>
